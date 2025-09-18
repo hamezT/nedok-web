@@ -1,0 +1,1715 @@
+---
+alwaysApply: true
+---
+================
+CODE SNIPPETS
+================
+TITLE: Basic React Component Example
+DESCRIPTION: This example demonstrates a simple React application with two functional components: `Greeting` which displays a personalized message, and `App` which renders the `Greeting` component. It showcases basic JSX syntax and component composition, suitable for quick testing in an online sandbox.
+
+SOURCE: https://react.dev/learn/installation
+
+LANGUAGE: javascript
+CODE:
+```
+function Greeting({ name }) {
+return <h1>Hello, {name}</h1>;
+}
+  
+
+export default function App() {
+return <Greeting name="world" />
+}
+```
+
+--------------------------------
+
+TITLE: Example of React Compiler's Build Output
+DESCRIPTION: This code snippet illustrates how React Compiler transforms components by automatically adding memoization logic. It shows an example of compiled output where the `_c` function from `react/compiler-runtime` is used to manage memoization, demonstrating the compiler's effect on the final bundle.
+
+SOURCE: https://react.dev/learn/react-compiler/installation
+
+LANGUAGE: JavaScript
+CODE:
+```
+import { c as _c } from "react/compiler-runtime";
+
+export default function MyApp() {
+  const $ = _c(1);
+  let t0;
+  if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
+    t0 = <div>Hello World</div>;
+    $[0] = t0;
+  } else {
+    t0 = $[0];
+  }
+  return t0;
+}
+```
+
+--------------------------------
+
+TITLE: Complete React Shared State Example (Lifting State Up)
+DESCRIPTION: This comprehensive example combines all parts of the 'lifting state up' pattern. The `MyApp` component manages the shared state and passes it down, while the `MyButton` components consume these props, resulting in a synchronized counter where all buttons update together when any one is clicked.
+
+SOURCE: https://react.dev/learn
+
+LANGUAGE: javascript
+CODE:
+```
+import { useState } from 'react';
+
+export default function MyApp() {
+  const [count, setCount] = useState(0);
+
+  function handleClick() {
+    setCount(count + 1);
+  }
+
+  return (
+    <div>
+      <h1>Counters that update together</h1>
+      <MyButton count={count} onClick={handleClick} />
+      <MyButton count={count} onClick={handleClick} />
+    </div>
+  );
+}
+
+function MyButton({ count, onClick }) {
+  return (
+    <button onClick={onClick}>
+      Clicked {count} times
+    </button>
+  );
+}
+```
+
+--------------------------------
+
+TITLE: Full example of nested React components
+DESCRIPTION: This comprehensive snippet combines the `MyButton` and `MyApp` components, illustrating how a simple button component can be rendered within a larger application structure. The `export default` keywords specify the main component for the file.
+
+SOURCE: https://react.dev/learn
+
+LANGUAGE: JavaScript
+CODE:
+```
+function MyButton() {
+  return (
+    <button>
+      I'm a button
+    </button>
+  );
+}
+
+export default function MyApp() {
+  return (
+    <div>
+      <h1>Welcome to my app</h1>
+      <MyButton />
+    </div>
+  );
+}
+```
+
+--------------------------------
+
+TITLE: Install React Compiler Babel Plugin
+DESCRIPTION: Instructions to install the `babel-plugin-react-compiler` as a development dependency using various package managers. The `@rc` tag ensures the latest release candidate version is installed.
+
+SOURCE: https://react.dev/learn/react-compiler/installation
+
+LANGUAGE: npm
+CODE:
+```
+npm install -D babel-plugin-react-compiler@rc
+```
+
+LANGUAGE: yarn
+CODE:
+```
+yarn add -D babel-plugin-react-compiler@rc
+```
+
+LANGUAGE: pnpm
+CODE:
+```
+pnpm install -D babel-plugin-react-compiler@rc
+```
+
+--------------------------------
+
+TITLE: Install vite-plugin-babel for Vite
+DESCRIPTION: Installs the `vite-plugin-babel` package as a development dependency. This plugin is an alternative way to integrate Babel configurations, including React Compiler, into a Vite project.
+
+SOURCE: https://react.dev/learn/react-compiler/installation
+
+LANGUAGE: npm
+CODE:
+```
+npm install -D vite-plugin-babel
+```
+
+--------------------------------
+
+TITLE: Install ESLint Plugin for React Compiler
+DESCRIPTION: This command installs the `eslint-plugin-react-hooks` release candidate, which includes a rule to identify code that cannot be optimized by the React Compiler. This helps developers understand and gradually address optimization violations.
+
+SOURCE: https://react.dev/learn/react-compiler/installation
+
+LANGUAGE: Shell
+CODE:
+```
+npm install -D eslint-plugin-react-hooks@rc
+```
+
+--------------------------------
+
+TITLE: Nest React components within a parent component
+DESCRIPTION: This example shows how to embed one React component (`MyButton`) inside another (`MyApp`). React components are referenced like HTML tags but must start with a capital letter.
+
+SOURCE: https://react.dev/learn
+
+LANGUAGE: JavaScript
+CODE:
+```
+export default function MyApp() {
+  return (
+    <div>
+      <h1>Welcome to my app</h1>
+      <MyButton />
+    </div>
+  );
+}
+```
+
+--------------------------------
+
+TITLE: Initialize React in an existing JavaScript project
+DESCRIPTION: This snippet demonstrates how to set up a modular JavaScript environment for React, including installing necessary packages and rendering a basic 'Hello, world!' component to verify the setup. It assumes you are integrating React into an existing web application.
+
+SOURCE: https://react.dev/learn/add-react-to-an-existing-project
+
+LANGUAGE: shell
+CODE:
+```
+npm install react react-dom
+```
+
+LANGUAGE: javascript
+CODE:
+```
+import { createRoot } from 'react-dom/client';
+
+// Clear the existing HTML content
+document.body.innerHTML = '<div id="app"></div>';
+
+// Render your React component instead
+const root = createRoot(document.getElementById('app'));
+root.render(<h1>Hello, world</h1>);
+```
+
+--------------------------------
+
+TITLE: Install React 19 and React DOM using npm
+DESCRIPTION: Instructions to install the latest stable version of React and React DOM (v19.0.0) using npm. This is the primary method for setting up a React 19 project.
+
+SOURCE: https://react.dev/blog/2024/04/25/react-19-upgrade-guide
+
+LANGUAGE: Shell
+CODE:
+```
+npm install --save-exact react@^19.0.0 react-dom@^19.0.0
+```
+
+--------------------------------
+
+TITLE: Configure React Compiler in Vite with vite-plugin-babel
+DESCRIPTION: An alternative method to integrate `babel-plugin-react-compiler` into a Vite project. This approach uses the `vite-plugin-babel` plugin to apply Babel configurations, requiring its prior installation.
+
+SOURCE: https://react.dev/learn/react-compiler/installation
+
+LANGUAGE: javascript
+CODE:
+```
+// vite.config.js
+
+import babel from 'vite-plugin-babel';
+
+import { defineConfig } from 'vite';
+
+import react from '@vitejs/plugin-react';
+
+  
+
+export default defineConfig({
+  plugins: [
+    react(),
+    babel({
+      babelConfig: {
+        plugins: ['babel-plugin-react-compiler'],
+      },
+    }),
+  ],
+
+});
+```
+
+--------------------------------
+
+TITLE: Initial React Components with Separate State
+DESCRIPTION: This code snippet illustrates the initial setup where each `MyButton` component maintains its own independent `count` state using `useState`. When a button is clicked, only its individual count updates, demonstrating a scenario where data is not shared.
+
+SOURCE: https://react.dev/learn
+
+LANGUAGE: javascript
+CODE:
+```
+export default function MyApp() {  
+  
+
+  const [count, setCount] = useState(0);  
+  
+
+  
+  function handleClick() {  
+    setCount(count + 1);  
+  }  
+  
+
+  
+  return (  
+    <div>  
+      <h1>Counters that update separately</h1>  
+      <MyButton />  
+      <MyButton />  
+    </div>  
+  );  
+
+}  
+  
+
+function MyButton() {  
+  // ... we're moving code from here ...  
+}
+```
+
+--------------------------------
+
+TITLE: Complete React List Rendering Component with Keys and Conditional Styling
+DESCRIPTION: A full React component (`ShoppingList`) demonstrating how to render a list of items from an array using `map()`. It includes dynamic styling based on item properties and proper `key` usage for efficient list updates.
+
+SOURCE: https://react.dev/learn
+
+LANGUAGE: javascript
+CODE:
+```
+const products = [
+  { title: 'Cabbage', isFruit: false, id: 1 },
+  { title: 'Garlic', isFruit: false, id: 2 },
+  { title: 'Apple', isFruit: true, id: 3 },
+];
+
+export default function ShoppingList() {
+  const listItems = products.map(product =>
+    <li
+      key={product.id}
+      style={{
+        color: product.isFruit ? 'magenta' : 'darkgreen'
+      }}
+    >
+      {product.title}
+    </li>
+  );
+
+  return (
+    <ul>{listItems}</ul>
+  );
+}
+```
+
+--------------------------------
+
+TITLE: Prepare Data for List Rendering in React
+DESCRIPTION: Defines a simple array of product objects, serving as the data source for rendering a list of items in a React component. Each object contains properties like `title` and a unique `id`.
+
+SOURCE: https://react.dev/learn
+
+LANGUAGE: javascript
+CODE:
+```
+const products = [
+  { title: 'Cabbage', id: 1 },
+  { title: 'Garlic', id: 2 },
+  { title: 'Apple', id: 3 },
+];
+```
+
+--------------------------------
+
+TITLE: React useEffect: Symmetrical Setup and Cleanup for External Systems
+DESCRIPTION: This example illustrates the correct pattern for `useEffect` where the cleanup function is symmetrical to the setup logic. It shows how to establish an external connection (e.g., to a server) in the effect's setup phase and then properly disconnect it in the cleanup function, ensuring resources are managed efficiently when dependencies change or the component unmounts.
+
+SOURCE: https://react.dev/reference/react/useEffect
+
+LANGUAGE: JavaScript
+CODE:
+```
+useEffect(() => {
+  const connection = createConnection(serverUrl, roomId);
+  connection.connect();
+  return () => {
+    connection.disconnect();
+  };
+}, [serverUrl, roomId]);
+```
+
+--------------------------------
+
+TITLE: Install React Compiler Beta and ESLint Plugin
+DESCRIPTION: Instructions for installing the beta versions of `babel-plugin-react-compiler` and `eslint-plugin-react-compiler`. This allows early adopters and library maintainers to test the React Compiler and provide feedback on its performance and compatibility.
+
+SOURCE: https://react.dev/blog/2024/10/21/react-compiler-beta-release
+
+LANGUAGE: bash
+CODE:
+```
+npm install -D babel-plugin-react-compiler@beta eslint-plugin-react-compiler@beta
+```
+
+LANGUAGE: bash
+CODE:
+```
+yarn add -D babel-plugin-react-compiler@beta eslint-plugin-react-compiler@beta
+```
+
+--------------------------------
+
+TITLE: Complete React Application Examples (createElement vs JSX)
+DESCRIPTION: Presents full, runnable React application examples (`App.js`) that define and render a `Greeting` component, showcasing the complete implementation using both `createElement` and JSX.
+
+SOURCE: https://react.dev/reference/react/createElement
+
+LANGUAGE: JavaScript
+CODE:
+```
+import { createElement } from 'react';
+
+function Greeting({ name }) {
+  return createElement(
+    'h1',
+    { className: 'greeting' },
+    'Hello ',
+    createElement('i', null, name),
+    '. Welcome!'
+  );
+}
+
+export default function App() {
+  return createElement(
+    Greeting,
+    { name: 'Taylor' }
+  );
+}
+```
+
+LANGUAGE: JavaScript
+CODE:
+```
+function Greeting({ name }) {
+  return (
+    <h1 className="greeting">
+      Hello <i>{name}</i>. Welcome!
+    </h1>
+  );
+}
+
+export default function App() {
+  return <Greeting name="Taylor" />;
+}
+```
+
+--------------------------------
+
+TITLE: Comprehensive example of unmounting with `render` and `App.js`
+DESCRIPTION: This snippet provides a more comprehensive example of using `unmountComponentAtNode` to remove a React application. It shows importing both `render` and `unmountComponentAtNode` from `react-dom`, and importing an `App` component from a separate file, demonstrating a common setup for rendering and then cleaning up a React app.
+
+SOURCE: https://react.dev/reference/react-dom/unmountComponentAtNode
+
+LANGUAGE: JavaScript
+CODE:
+```
+import { render, unmountComponentAtNode } from 'react-dom';  
+
+
+
+import App from './App.js';  
+
+
+
+
+
+const rootNode = document.getElementById('root');  
+
+
+
+render(<App />, rootNode);  
+
+
+
+
+
+// ...  
+
+
+
+unmountComponentAtNode(rootNode);
+```
+
+--------------------------------
+
+TITLE: Define a basic React functional component
+DESCRIPTION: This snippet demonstrates how to create a simple functional component in React. Components are JavaScript functions that return JSX markup, representing a piece of the user interface.
+
+SOURCE: https://react.dev/learn
+
+LANGUAGE: JavaScript
+CODE:
+```
+function MyButton() {
+  return (
+    <button>I'm a button</button>
+  );
+}
+```
+
+--------------------------------
+
+TITLE: Configure React Compiler in Vite with @vitejs/plugin-react
+DESCRIPTION: Integrates `babel-plugin-react-compiler` into a Vite project by passing it as a Babel plugin option within the `@vitejs/plugin-react` plugin configuration in your `vite.config.js`.
+
+SOURCE: https://react.dev/learn/react-compiler/installation
+
+LANGUAGE: javascript
+CODE:
+```
+// vite.config.js
+
+import { defineConfig } from 'vite';
+
+import react from '@vitejs/plugin-react';
+
+  
+
+export default defineConfig({
+  plugins: [
+    react({
+      babel: {
+        plugins: ['babel-plugin-react-compiler'],
+      },
+    }),
+  ],
+
+});
+```
+
+--------------------------------
+
+TITLE: Install React 18 using npm or yarn
+DESCRIPTION: Instructions for installing React 18 and React DOM using either npm or yarn package managers. This is the initial step for upgrading an existing project or starting a new one with React 18.
+
+SOURCE: https://react.dev/blog/2022/03/08/react-18-upgrade-guide
+
+LANGUAGE: Shell
+CODE:
+```
+npm install react react-dom
+```
+
+LANGUAGE: Shell
+CODE:
+```
+yarn add react react-dom
+```
+
+--------------------------------
+
+TITLE: Configure React Compiler in Babel
+DESCRIPTION: Adds `babel-plugin-react-compiler` to the Babel plugin pipeline in your `babel.config.js` file. It is crucial for this plugin to be the first in the array to ensure correct analysis of the original source code.
+
+SOURCE: https://react.dev/learn/react-compiler/installation
+
+LANGUAGE: javascript
+CODE:
+```
+module.exports = {
+  plugins: [
+    'babel-plugin-react-compiler', // must run first!
+    // ... other plugins
+  ],
+  // ... other config
+};
+```
+
+--------------------------------
+
+TITLE: Install React 19 and React DOM using Yarn
+DESCRIPTION: Instructions to install the latest stable version of React and React DOM (v19.0.0) using Yarn. This is an alternative to npm for package management.
+
+SOURCE: https://react.dev/blog/2024/04/25/react-19-upgrade-guide
+
+LANGUAGE: Shell
+CODE:
+```
+yarn add --exact react@^19.0.0 react-dom@^19.0.0
+```
+
+--------------------------------
+
+TITLE: Configure React Compiler with Vite and React Router
+DESCRIPTION: This snippet demonstrates how to integrate the React Compiler into a Vite project that uses React Router. It involves installing `vite-plugin-babel` and configuring `vite.config.js` to include the `reactRouter` plugin and a Babel plugin for the React Compiler, optionally with TypeScript support.
+
+SOURCE: https://react.dev/learn/react-compiler/installation
+
+LANGUAGE: Shell
+CODE:
+```
+npm install vite-plugin-babel
+```
+
+LANGUAGE: JavaScript
+CODE:
+```
+import { defineConfig } from "vite";
+import babel from "vite-plugin-babel";
+import { reactRouter } from "@react-router/dev/vite";
+
+const ReactCompilerConfig = { /* ... */ };
+
+export default defineConfig({
+  plugins: [
+    reactRouter(),
+    babel({
+      filter: /\.[jt]sx?$/,
+      babelConfig: {
+        presets: ["@babel/preset-typescript"], // if you use TypeScript
+        plugins: [
+          ["babel-plugin-react-compiler", ReactCompilerConfig],
+        ],
+      },
+    }),
+  ],
+});
+```
+
+--------------------------------
+
+TITLE: Importing useState Hook for React State Management
+DESCRIPTION: This snippet demonstrates the essential first step for using state in React functional components: importing the `useState` Hook from the 'react' library. It makes the state management functionality available for use within your components.
+
+SOURCE: https://react.dev/learn
+
+LANGUAGE: javascript
+CODE:
+```
+import { useState } from 'react';
+```
+
+--------------------------------
+
+TITLE: Implementing a Click Counter Component with React State
+DESCRIPTION: This example provides a complete functional React component, `MyButton`, that utilizes `useState` to manage a click counter. It includes an event handler (`handleClick`) that increments the state variable `count` and renders the updated value within a button, demonstrating basic interactive state management.
+
+SOURCE: https://react.dev/learn
+
+LANGUAGE: javascript
+CODE:
+```
+function MyButton() {  
+  const [count, setCount] = useState(0);  
+  
+  function handleClick() {  
+    setCount(count + 1);  
+  }  
+  
+  return (  
+    <button onClick={handleClick}>  
+      Clicked {count} times  
+    </button>  
+  );  
+}
+```
+
+--------------------------------
+
+TITLE: Full React Component with Dynamic Data and Styling
+DESCRIPTION: A complete React component (`Profile`) demonstrating embedding multiple JavaScript variables and expressions within JSX. It includes string concatenation for `alt` text and using a JavaScript object for the `style` attribute, showcasing how styles can depend on JavaScript variables.
+
+SOURCE: https://react.dev/learn
+
+LANGUAGE: javascript
+CODE:
+```
+const user = {
+  name: 'Hedy Lamarr',
+  imageUrl: 'https://i.imgur.com/yXOvdOSs.jpg',
+  imageSize: 90,
+};
+
+export default function Profile() {
+  return (
+    <>
+      <h1>{user.name}</h1>
+      <img
+        className="avatar"
+        src={user.imageUrl}
+        alt={'Photo of ' + user.name}
+        style={{
+          width: user.imageSize,
+          height: user.imageSize
+        }}
+      />
+    </>
+  );
+}
+```
+
+--------------------------------
+
+TITLE: Example React Application Structure for Server Components
+DESCRIPTION: This code snippet illustrates a basic React application structure, demonstrating how components are imported and composed. It serves as a foundational example to understand how the `'use client'` directive, when applied to components like `InspirationGenerator`, segments the module dependency tree, marking specific parts of the application for client-side evaluation.
+
+SOURCE: https://react.dev/reference/rsc/use-client
+
+LANGUAGE: JavaScript
+CODE:
+```
+import FancyText from './FancyText';
+import InspirationGenerator from './InspirationGenerator';
+import Copyright from './Copyright';
+
+export default function App() {
+  return (
+    <>
+      <FancyText title text="Get Inspired App" />
+      <InspirationGenerator>
+        <Copyright year={2004} />
+      </InspirationGenerator>
+    </>
+  );
+}
+```
+
+--------------------------------
+
+TITLE: Creating a Basic React Application Component
+DESCRIPTION: This code snippet demonstrates the basic structure of a React application's root component. It shows a simple functional component that renders a welcome message, serving as a starting point for a new React project.
+
+SOURCE: https://react.dev/blog/2025/02/14/sunsetting-create-react-app
+
+LANGUAGE: jsx
+CODE:
+```
+export default function App() {
+  return (
+    <div>
+      <h1>Welcome to the Admin Tool!</h1>
+    </div>
+  )
+}
+```
+
+--------------------------------
+
+TITLE: Install Parcel for React Development
+DESCRIPTION: This command installs Parcel as a development dependency in your project. Parcel is a build tool that provides an excellent out-of-the-box development experience, supporting fast refresh, JSX, TypeScript, and styling for React applications.
+
+SOURCE: https://react.dev/learn/build-a-react-app-from-scratch
+
+LANGUAGE: Shell
+CODE:
+```
+npm install --save-dev parcel
+```
+
+--------------------------------
+
+TITLE: Illustrating Basic HTML Document Structure
+DESCRIPTION: This snippet demonstrates how standard HTML tags like `<h1>` and `<li>` are used to create structured documents on the web. It shows a simple article structure with a heading and an ordered list, serving as a foundational example for UI building blocks.
+
+SOURCE: https://react.dev/learn/your-first-component
+
+LANGUAGE: HTML
+CODE:
+```
+<article>  
+  <h1>My First Component</h1>  
+  <ol>  
+    <li>Components: UI Building Blocks</li>  
+    <li>Defining a Component</li>  
+    <li>Using a Component</li>  
+  </ol>  
+</article>
+```
+
+--------------------------------
+
+TITLE: Install React Compiler Runtime for Older React Versions
+DESCRIPTION: This snippet shows how to install the `react-compiler-runtime` package as a direct dependency. This is necessary for libraries that need to support React versions older than 19, ensuring compiled code works correctly across different React environments. It also illustrates the recommended `peerDependencies` setup in `package.json`.
+
+SOURCE: https://react.dev/reference/react-compiler/compiling-libraries
+
+LANGUAGE: Shell
+CODE:
+```
+npm install react-compiler-runtime@rc
+```
+
+LANGUAGE: JSON
+CODE:
+```
+{  
+
+  "dependencies": {  
+
+    "react-compiler-runtime": "^19.1.0-rc.2"  
+
+  },  
+
+  "peerDependencies": {  
+
+    "react": "^17.0.0 || ^18.0.0 || ^19.0.0"  
+
+  }  
+
+}
+```
+
+--------------------------------
+
+TITLE: Complete React Context Example with `use` Hook
+DESCRIPTION: This comprehensive example demonstrates the full lifecycle of using React Context with the `use` hook. It includes creating a context, providing a value via `ThemeContext.Provider`, and multiple nested components (Form, Panel, Button) consuming that context using `use`.
+
+SOURCE: https://react.dev/reference/react/use
+
+LANGUAGE: JavaScript
+CODE:
+```
+import { createContext, use } from 'react';
+
+const ThemeContext = createContext(null);
+
+export default function MyApp() {
+  return (
+    <ThemeContext value="dark">
+      <Form />
+    </ThemeContext>
+  )
+}
+
+function Form() {
+  return (
+    <Panel title="Welcome">
+      <Button show={true}>Sign up</Button>
+      <Button show={false}>Log in</Button>
+    </Panel>
+  );
+}
+
+function Panel({ title, children }) {
+  const theme = use(ThemeContext);
+  const className = 'panel-' + theme;
+  return (
+    <section className={className}>
+      <h1>{title}</h1>
+      {children}
+    </section>
+  )
+}
+
+function Button({ show, children }) {
+  if (show) {
+    const theme = use(ThemeContext);
+    const className = 'button-' + theme;
+    return (
+      <button className={className}>
+        {children}
+      </button>
+    );
+  }
+  return false
+}
+```
+
+--------------------------------
+
+TITLE: Migrate from React.createFactory to JSX
+DESCRIPTION: The `React.createFactory` method is removed in React 19. This example shows how to replace its usage with modern JSX syntax, which is the standard and more readable way to define React elements.
+
+SOURCE: https://react.dev/blog/2024/04/25/react-19-upgrade-guide
+
+LANGUAGE: JavaScript
+CODE:
+```
+// Before  
+
+
+
+import { createFactory } from 'react';  
+
+
+  
+
+
+  
+
+
+const button = createFactory('button');
+
+```
+
+LANGUAGE: JavaScript
+CODE:
+```
+// After  
+
+
+
+const button = <button />;
+
+```
+
+--------------------------------
+
+TITLE: Initialize and Render a Full React Application
+DESCRIPTION: This code snippet demonstrates the basic setup for a full React application. It imports `createRoot` from `react-dom/client`, identifies a DOM element by its ID ('root'), and then renders the main `<App />` component into it. This is typically executed once at application startup to mount the entire React UI.
+
+SOURCE: https://react.dev/reference/react-dom/client/createRoot
+
+LANGUAGE: JavaScript
+CODE:
+```
+import { createRoot } from 'react-dom/client';
+
+const root = createRoot(document.getElementById('root'));
+
+root.render(<App />);
+```
+
+--------------------------------
+
+TITLE: Migrate from react-test-renderer/shallow to react-shallow-renderer
+DESCRIPTION: In React 19, `react-test-renderer/shallow` has been removed. Developers should directly install and use `react-shallow-renderer`. It is also recommended to reconsider the use of shallow rendering in favor of `@testing-library/react` or `@testing-library/react-native`.
+
+SOURCE: https://react.dev/blog/2024/04/25/react-19-upgrade-guide
+
+LANGUAGE: Shell
+CODE:
+```
+npm install react-shallow-renderer --save-dev
+```
+
+LANGUAGE: JavaScript
+CODE:
+```
+- import ShallowRenderer from 'react-test-renderer/shallow';  
++ import ShallowRenderer from 'react-shallow-renderer';
+```
+
+--------------------------------
+
+TITLE: Example React Class Component Before Migration
+DESCRIPTION: This snippet presents a basic React class component named `Greeting` that renders a personalized greeting, along with an `App` component that uses multiple instances of `Greeting`. This serves as the starting point for migration to a functional component.
+
+SOURCE: https://react.dev/reference/react/Component
+
+LANGUAGE: JavaScript
+CODE:
+```
+import { Component } from 'react';
+
+class Greeting extends Component {
+  render() {
+    return <h1>Hello, {this.props.name}!</h1>;
+  }
+}
+
+export default function App() {
+  return (
+    <>
+      <Greeting name="Sara" />
+      <Greeting name="Cahal" />
+      <Greeting name="Edite" />
+    </>
+  );
+}
+```
+
+--------------------------------
+
+TITLE: Pass React State and Handlers Down as Props
+DESCRIPTION: This snippet shows the `MyApp` component managing the shared `count` state and the `handleClick` function. It then passes both the `count` and `handleClick` as props to its child `MyButton` components, preparing them to receive shared data.
+
+SOURCE: https://react.dev/learn
+
+LANGUAGE: javascript
+CODE:
+```
+export default function MyApp() {  
+  const [count, setCount] = useState(0);  
+  
+
+  
+  function handleClick() {  
+    setCount(count + 1);  
+  }  
+  
+
+  
+  return (  
+    <div>  
+      <h1>Counters that update together</h1>  
+      <MyButton count={count} onClick={handleClick} />  
+      <MyButton count={count} onClick={handleClick} />  
+    </div>  
+  );  
+} 
+```
+
+--------------------------------
+
+TITLE: Create a React App with Vite
+DESCRIPTION: This command initializes a new React project using Vite, a fast and lean build tool for modern web projects. Vite offers sensible defaults and a rich ecosystem of plugins for features like fast refresh and JSX.
+
+SOURCE: https://react.dev/learn/build-a-react-app-from-scratch
+
+LANGUAGE: Shell
+CODE:
+```
+npm create vite@latest my-app -- --template react
+```
+
+--------------------------------
+
+TITLE: Importing and Using useId in a React Component
+DESCRIPTION: Demonstrates the complete setup for using `useId`, including importing it from the 'react' package and integrating it into a functional component. This example highlights its application for creating accessible form elements.
+
+SOURCE: https://react.dev/reference/react/useId
+
+LANGUAGE: JavaScript
+CODE:
+```
+import { useId } from 'react';
+
+function PasswordField() {
+  const passwordHintId = useId();
+  // ...
+```
+
+--------------------------------
+
+TITLE: Example Browser Output of React Server and Client Components
+DESCRIPTION: Shows the rendered HTML structure in the browser, demonstrating how Server Components' output is integrated with Client Components. It highlights the inclusion of the client-side JavaScript bundle (`bundle.js`) responsible for hydrating and enabling interactivity for Client Components.
+
+SOURCE: https://react.dev/reference/rsc/server-components
+
+LANGUAGE: html
+CODE:
+```
+<head>  
+  <!-- the bundle for Client Components -->  
+  <script src="bundle.js" />  
+
+</head>  
+
+<body>  
+  <div>  
+    <Expandable key={1}>  
+      <p>this is the first note</p>  
+    </Expandable>  
+    <Expandable key={2}>  
+      <p>this is the second note</p>  
+    </Expandable>  
+    <!--...-->  
+  </div>  
+
+</body>
+```
+
+--------------------------------
+
+TITLE: Import and define a React class component from 'react'
+DESCRIPTION: This example demonstrates how to import the `Component` base class from the 'react' library and then define a class component. It showcases the complete setup for a class component, including the necessary import statement and a `render` method that uses props. This is the standard way to create class-based components in React applications.
+
+SOURCE: https://react.dev/reference/react/Component
+
+LANGUAGE: JavaScript
+CODE:
+```
+import { Component } from 'react';
+
+class Greeting extends Component {
+  render() {
+    return <h1>Hello, {this.props.name}!</h1>;
+  }
+}
+```
+
+--------------------------------
+
+TITLE: Render List Items Using Array Map Function in React
+DESCRIPTION: Illustrates how to transform an array of data into an array of JSX `<li>` elements using the `map()` function. It emphasizes the importance of the `key` attribute for each list item, which helps React efficiently update lists.
+
+SOURCE: https://react.dev/learn
+
+LANGUAGE: jsx
+CODE:
+```
+const listItems = products.map(product =>
+  <li key={product.id}>
+    {product.title}
+  </li>
+);
+  
+return (
+  <ul>{listItems}</ul>
+);
+```
+
+--------------------------------
+
+TITLE: React: Subscribing to an External Data Store with useSyncExternalStore
+DESCRIPTION: This example demonstrates how to integrate a React component (`TodosApp`) with an external, non-React data store (`todosStore`) using the `useSyncExternalStore` hook. It shows the basic setup for subscribing to store changes and retrieving a snapshot of its current state, allowing React to re-render efficiently when the external data updates. The full example includes adding new todos.
+
+SOURCE: https://react.dev/reference/react/useSyncExternalStore
+
+LANGUAGE: javascript
+CODE:
+```
+import { useSyncExternalStore } from 'react';  
+
+
+
+import { todosStore } from './todoStore.js';  
+
+
+
+  
+
+
+
+function TodosApp() {  
+
+
+
+  const todos = useSyncExternalStore(todosStore.subscribe, todosStore.getSnapshot);  
+
+
+
+  // ...  
+
+
+
+}
+```
+
+LANGUAGE: javascript
+CODE:
+```
+import { useSyncExternalStore } from 'react';
+import { todosStore } from './todoStore.js';
+
+export default function TodosApp() {
+  const todos = useSyncExternalStore(todosStore.subscribe, todosStore.getSnapshot);
+  return (
+    <>
+      <button onClick={() => todosStore.addTodo()}>Add todo</button>
+      <hr />
+      <ul>
+        {todos.map(todo => (
+          <li key={todo.id}>{todo.text}</li>
+        ))}
+      </ul>
+    </>
+  );
+}
+```
+
+--------------------------------
+
+TITLE: React useReducer: Complete Example with Initializer Function
+DESCRIPTION: This comprehensive example demonstrates a `TodoList` component using `useReducer` with an initializer function (`createInitialState`) to efficiently set up the initial state. It includes the reducer logic, state management for a draft input, and adding new todo items, showcasing how to prevent re-running expensive initial state calculations.
+
+SOURCE: https://react.dev/reference/react/useReducer
+
+LANGUAGE: JavaScript
+CODE:
+```
+import { useReducer } from 'react';
+
+function createInitialState(username) {
+  const initialTodos = [];
+  for (let i = 0; i < 50; i++) {
+    initialTodos.push({
+      id: i,
+      text: username + "'s task #" + (i + 1)
+    });
+  }
+  return {
+    draft: '',
+    todos: initialTodos,
+  };
+}
+
+function reducer(state, action) {
+  switch (action.type) {
+    case 'changed_draft': {
+      return {
+        draft: action.nextDraft,
+        todos: state.todos,
+      };
+    };
+    case 'added_todo': {
+      return {
+        draft: '',
+        todos: [{
+          id: state.todos.length,
+          text: state.draft
+        }, ...state.todos]
+      }
+    }
+  }
+  throw Error('Unknown action: ' + action.type);
+}
+
+export default function TodoList({ username }) {
+  const [state, dispatch] = useReducer(
+    reducer,
+    username,
+    createInitialState
+  );
+  return (
+    <>
+      <input
+        value={state.draft}
+        onChange={e => {
+          dispatch({
+            type: 'changed_draft',
+            nextDraft: e.target.value
+          })
+        }}
+      />
+      <button onClick={() => {
+        dispatch({ type: 'added_todo' });
+      }}>Add</button>
+      <ul>
+        {state.todos.map(item => (
+          <li key={item.id}>
+            {item.text}
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+```
+
+--------------------------------
+
+TITLE: Conditional Rendering with Ternary Operator in JSX
+DESCRIPTION: Demonstrates using the JavaScript ternary operator (`? :`) directly within JSX to conditionally render elements. This provides a more compact syntax than `if...else` for simple conditional logic.
+
+SOURCE: https://react.dev/learn
+
+LANGUAGE: jsx
+CODE:
+```
+<div>
+  {isLoggedIn ? (
+    <AdminPanel />
+  ) : (
+    <LoginForm />
+  )}
+</div>
+```
+
+--------------------------------
+
+TITLE: React `useEffect` Hook Signature
+DESCRIPTION: This snippet illustrates the basic syntax for the `useEffect` React Hook. It accepts a `setup` function, which contains the effect's logic, and an optional `dependencies` array to control when the effect re-runs.
+
+SOURCE: https://react.dev/reference/react/useEffect
+
+LANGUAGE: javascript
+CODE:
+```
+useEffect(setup, dependencies?)
+```
+
+--------------------------------
+
+TITLE: Gradual Adoption of React Compiler with "use memo"
+DESCRIPTION: This example illustrates a strategy for gradually adopting the React Compiler by applying the `"use memo"` directive incrementally. It suggests starting with leaf components and then moving up the component tree as behavior is verified.
+
+SOURCE: https://react.dev/reference/react-compiler/directives/use-memo
+
+LANGUAGE: JavaScript
+CODE:
+```
+// Start by optimizing leaf components  
+function Button({ onClick, children }) {  
+  "use memo";  
+  // ...  
+}  
+  
+// Gradually move up the tree as you verify behavior  
+function ButtonGroup({ buttons }) {  
+  "use memo";  
+  // ...  
+}
+```
+
+--------------------------------
+
+TITLE: Complete React controlled form example with multiple inputs
+DESCRIPTION: Provides a comprehensive example of a React form managing multiple controlled inputs (text and number) using `useState`. It includes dynamic display of values and external state manipulation via a button, demonstrating a full controlled component setup.
+
+SOURCE: https://react.dev/reference/react-dom/components/input
+
+LANGUAGE: jsx
+CODE:
+```
+import { useState } from 'react';
+
+export default function Form() {
+  const [firstName, setFirstName] = useState('');
+  const [age, setAge] = useState('20');
+  const ageAsNumber = Number(age);
+  return (
+    <>
+      <label>
+        First name:
+        <input
+          value={firstName}
+          onChange={e => setFirstName(e.target.value)}
+        />
+      </label>
+      <label>
+        Age:
+        <input
+          value={age}
+          onChange={e => setAge(e.target.value)}
+          type="number"
+        />
+        <button onClick={() => setAge(ageAsNumber + 10)}>
+          Add 10 years
+        </button>
+      </label>
+      {firstName !== '' &&
+        <p>Your name is {firstName}.</p>
+      }
+      {ageAsNumber > 0 &&
+        <p>Your age is {ageAsNumber}.</p>
+      }
+    </>
+  );
+}
+```
+
+--------------------------------
+
+TITLE: Conditional Rendering with Logical AND Operator in JSX
+DESCRIPTION: Explains how to use the logical `&&` operator for conditional rendering when an `else` branch is not needed. The element on the right side of `&&` will only be rendered if the condition on the left is true.
+
+SOURCE: https://react.dev/learn
+
+LANGUAGE: jsx
+CODE:
+```
+<div>
+  {isLoggedIn && <AdminPanel />}
+</div>
+```
+
+--------------------------------
+
+TITLE: Example: Using `act` to Render and Assert Component State
+DESCRIPTION: This example demonstrates how to use `await act()` within a test to render a component and then perform assertions. It highlights the recommended asynchronous usage of `act` to ensure all updates, including those across async boundaries, are flushed before assertions are made, making tests more reliable.
+
+SOURCE: https://react.dev/reference/react/act
+
+LANGUAGE: javascript
+CODE:
+```
+it ('renders with button disabled', async () => {
+  await act(async () => {
+    root.render(<TestComponent />)
+  });
+  expect(container.querySelector('button')).toBeDisabled();
+});
+```
+
+--------------------------------
+
+TITLE: Example: Multi-level ref forwarding in React
+DESCRIPTION: A comprehensive example demonstrating how a ref can be passed from a parent `Form` component, through an intermediate `FormField` component, to a `MyInput` component. This setup allows the `Form` to interact with the underlying `<input>` DOM node, showcasing complex ref forwarding scenarios.
+
+SOURCE: https://react.dev/reference/react/forwardRef
+
+LANGUAGE: javascript
+CODE:
+```
+import { useRef } from 'react';
+import FormField from './FormField.js';
+
+export default function Form() {
+  const ref = useRef(null);
+
+  function handleClick() {
+    ref.current.focus();
+  }
+
+  return (
+    <form>
+      <FormField label="Enter your name:" ref={ref} isRequired={true} />
+      <button type="button" onClick={handleClick}>
+        Edit
+      </button>
+    </form>
+  );
+}
+```
+
+--------------------------------
+
+TITLE: Basic `prefetchDNS` Call
+DESCRIPTION: A straightforward example demonstrating a direct call to `prefetchDNS` with a target URL, used to hint the browser to resolve the domain's IP address.
+
+SOURCE: https://react.dev/reference/react-dom/prefetchDNS
+
+LANGUAGE: JavaScript
+CODE:
+```
+prefetchDNS("https://example.com");
+```
+
+--------------------------------
+
+TITLE: Importing and Initializing `createRoot` for React Applications
+DESCRIPTION: This example demonstrates how to import `createRoot` from `react-dom/client` and initialize it with a specific DOM element, typically obtained using `document.getElementById`. This sets up the entry point for a React application to manage the DOM within that element.
+
+SOURCE: https://react.dev/reference/react-dom/client/createRoot
+
+LANGUAGE: javascript
+CODE:
+```
+import { createRoot } from 'react-dom/client';
+
+
+
+const domNode = document.getElementById('root');
+
+
+
+const root = createRoot(domNode);
+```
+
+--------------------------------
+
+TITLE: Full React App Example Using Fragments for Component Structure
+DESCRIPTION: Illustrates a complete React application structure where multiple components return elements grouped by Fragments. This example shows how `Blog` and `Post` components use Fragments to return multiple children, ensuring a flat DOM structure without unnecessary wrapper elements.
+
+SOURCE: https://react.dev/reference/react/Fragment
+
+LANGUAGE: JSX
+CODE:
+```
+export default function Blog() {
+  return (
+    <>
+      <Post title="An update" body="It's been a while since I posted..." />
+      <Post title="My new blog" body="I am starting a new blog!" />
+    </>
+  )
+}
+
+function Post({ title, body }) {
+  return (
+    <>
+      <PostTitle title={title} />
+      <PostBody body={body} />
+    </>
+  );
+}
+
+function PostTitle({ title }) {
+  return <h1>{title}</h1>
+}
+
+function PostBody({ body }) {
+  return (
+    <article>
+      <p>{body}</p>
+    </article>
+  );
+}
+```
+
+--------------------------------
+
+TITLE: Troubleshoot React Compiler Runtime Errors
+DESCRIPTION: This section provides commands and configuration examples to troubleshoot 'Cannot find module 'react/compiler-runtime'' errors. It includes checking the installed React version and ensuring the compiler's `target` configuration matches the React major version.
+
+SOURCE: https://react.dev/reference/react-compiler/target
+
+LANGUAGE: shell
+CODE:
+```
+npm why react
+```
+
+LANGUAGE: shell
+CODE:
+```
+npm install react-compiler-runtime@rc
+```
+
+LANGUAGE: javascript
+CODE:
+```
+{  \n  target: '18' // Must match your React major version  \n}
+```
+
+--------------------------------
+
+TITLE: Server-Side Rendering with renderToPipeableStream and Hydration
+DESCRIPTION: This example illustrates a more complete server-side rendering setup using `renderToPipeableStream`. It shows how to import the function, render a React component (`<App />`), include `bootstrapScripts` for client-side hydration, and use the `onShellReady` callback to set the content type and pipe the response to the client.
+
+SOURCE: https://react.dev/reference/react-dom/server/renderToPipeableStream
+
+LANGUAGE: JavaScript
+CODE:
+```
+import { renderToPipeableStream } from 'react-dom/server';
+
+const { pipe } = renderToPipeableStream(<App />, {
+  bootstrapScripts: ['/main.js'],
+  onShellReady() {
+    response.setHeader('content-type', 'text/html');
+    pipe(response);
+  }
+});
+```
+
+--------------------------------
+
+TITLE: Prefetch DNS in React Event Handler
+DESCRIPTION: This example demonstrates how to use `prefetchDNS` from `react-dom` inside an `onClick` event handler of a React component. When the 'Start Wizard' button is clicked, DNS resolution for 'http://example.com' is initiated, allowing for earlier resource loading.
+
+SOURCE: https://react.dev/reference/react-dom/prefetchDNS
+
+LANGUAGE: JavaScript
+CODE:
+```
+import { prefetchDNS } from 'react-dom';
+
+function CallToAction() {
+  const onClick = () => {
+    prefetchDNS('http://example.com');
+    startWizard();
+  }
+  return (
+    <button onClick={onClick}>Start Wizard</button>
+  );
+}
+```
+
+--------------------------------
+
+TITLE: Test React component rendering with `act()`
+DESCRIPTION: This example demonstrates how to test the initial rendering of a React component (`Counter`) using `act()`. It shows creating a DOM container, rendering the component with `ReactDOMClient.createRoot().render()`, and wrapping the render call in `act()` to ensure all effects are applied before assertions on the rendered output and document title.
+
+SOURCE: https://react.dev/reference/react/act
+
+LANGUAGE: javascript
+CODE:
+```
+import {act} from 'react';  
+
+import ReactDOMClient from 'react-dom/client';  
+
+import Counter from './Counter';  
+  
+it('can render and update a counter', async () => {  
+  container = document.createElement('div');  
+  document.body.appendChild(container);  
+    
+  // ✅ Render the component inside act().  
+  await act(() => {  
+    ReactDOMClient.createRoot(container).render(<Counter />);  
+  });  
+    
+  const button = container.querySelector('button');  
+  const label = container.querySelector('p');  
+  expect(label.textContent).toBe('You clicked 0 times');  
+  expect(document.title).toBe('You clicked 0 times');  
+
+});
+```
+
+--------------------------------
+
+TITLE: Render a React Application into a Root
+DESCRIPTION: Shows the fundamental process of rendering a React application component (`App`) into a DOM element using `createRoot` and `root.render()`. This is a basic setup required for any React application to display content.
+
+SOURCE: https://react.dev/reference/react-dom/client/createRoot
+
+LANGUAGE: JavaScript
+CODE:
+```
+import { createRoot } from 'react-dom/client';  
+
+
+
+import App from './App.js';  
+
+
+  
+
+
+const root = createRoot(document.getElementById('root'));  
+
+
+
+root.render(<App />);
+```
+
+--------------------------------
+
+TITLE: Install React Compiler ESLint Plugin Only
+DESCRIPTION: Instructions for installing only the `eslint-plugin-react-compiler`. This linter helps developers proactively identify and correct 'Rules of React' violations, making it easier to adopt the compiler later. It can be used independently, even if the compiler is not installed.
+
+SOURCE: https://react.dev/blog/2024/10/21/react-compiler-beta-release
+
+LANGUAGE: bash
+CODE:
+```
+npm install -D eslint-plugin-react-compiler@beta
+```
+
+LANGUAGE: bash
+CODE:
+```
+yarn add -D eslint-plugin-react-compiler@beta
+```
+
+--------------------------------
+
+TITLE: React `useEffect` Example: Connecting to an External Chat System
+DESCRIPTION: This example demonstrates how to use the `useEffect` Hook to manage a connection to an external chat system. It shows establishing a connection when the component mounts or its `serverUrl` or `roomId` dependencies change, and how to clean up the connection when the component unmounts or dependencies change. It also utilizes `useState` for managing the `serverUrl`.
+
+SOURCE: https://react.dev/reference/react/useEffect
+
+LANGUAGE: javascript
+CODE:
+```
+import { useState, useEffect } from 'react';
+
+import { createConnection } from './chat.js';
+
+function ChatRoom({ roomId }) {
+  const [serverUrl, setServerUrl] = useState('https://localhost:1234');
+
+  useEffect(() => {
+    const connection = createConnection(serverUrl, roomId);
+    connection.connect();
+    return () => {
+      connection.disconnect();
+    };
+  }, [serverUrl, roomId]);
+  // ...
+}
+```
+
+--------------------------------
+
+TITLE: Embed JavaScript Variables in JSX
+DESCRIPTION: Demonstrates how to embed a JavaScript variable (e.g., `user.name`) directly into JSX markup using curly braces. This allows dynamic content from your code to be displayed to the user.
+
+SOURCE: https://react.dev/learn
+
+LANGUAGE: jsx
+CODE:
+```
+return (
+  <h1>
+    {user.name}
+  </h1>
+);
+```
+
+--------------------------------
+
+TITLE: Create a React Router Project
+DESCRIPTION: Initializes a new project using React Router, the most popular routing library for React. This command sets up a project that can be paired with Vite to create a full-stack React framework, emphasizing standard Web APIs.
+
+SOURCE: https://react.dev/learn/start-a-new-react-project
+
+LANGUAGE: Shell
+CODE:
+```
+npx create-react-router@latest
+```
+
+--------------------------------
+
+TITLE: React: App Component with Custom ViewTransition Animation
+DESCRIPTION: A complete `App` component example demonstrating the use of a custom `slow-fade` animation with `unstable_ViewTransition`. This setup requires corresponding CSS definitions for the named animation.
+
+SOURCE: https://react.dev/blog/2025/04/23/react-labs-view-transitions-activity-and-more
+
+LANGUAGE: jsx
+CODE:
+```
+import { unstable_ViewTransition as ViewTransition } from "react";
+import Details from "./Details";
+import Home from "./Home";
+import { useRouter } from "./router";
+
+export default function App() {
+  const { url } = useRouter();
+
+  // Define a default animation of .slow-fade.
+  // See animations.css for the animation definiton.
+  return (
+    <ViewTransition default="slow-fade">
+      {url === '/' ? <Home /> : <Details />}
+    </ViewTransition>
+  );
+}
+```
+
+--------------------------------
+
+TITLE: Conditional Rendering with If-Else Statement in React
+DESCRIPTION: Shows how to conditionally render different JSX elements (`AdminPanel` or `LoginForm`) based on a JavaScript `if...else` statement. The result is assigned to a variable before being included in the returned JSX.
+
+SOURCE: https://react.dev/learn
+
+LANGUAGE: jsx
+CODE:
+```
+let content;
+
+if (isLoggedIn) {
+  content = <AdminPanel />;
+} else {
+  content = <LoginForm />;
+}
+
+return (
+  <div>
+    {content}
+  </div>
+);
+```
