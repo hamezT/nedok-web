@@ -169,7 +169,7 @@ export const DeviceListSection = (): JSX.Element => {
           <img
             className="w-5 h-5"
             alt="Collapse"
-            src="/arrows---arrow-left-double-line.svg"
+            src="/arrows/arrows---arrow-left-double-line.svg"
           />
         </Button>
       </header>
