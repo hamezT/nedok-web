@@ -6,8 +6,9 @@ import {
   Maximize2Icon,
   SettingsIcon,
 } from "lucide-react";
-import React from "react";
 import { Badge } from "../../../../components/ui/badge";
+import { useDevice } from "../../../../contexts/DeviceContext";
+import { useNavigation } from "../../../../hooks/useNavigation";
 import { Button } from "../../../../components/ui/button";
 import { Card, CardContent, CardHeader } from "../../../../components/ui/card";
 import {
@@ -156,6 +157,10 @@ const sensorData = [
 ];
 
 export const SensorDataSection = (): JSX.Element => {
+  const { selectedDevice } = useDevice();
+  const { navigateBack } = useNavigation();
+
+  console.log("SensorDataSection rendered with device:", selectedDevice); // Debug log
   return (
     <section className="flex items-start gap-2.5 p-5 flex-1 self-stretch grow">
       <Card className="flex-1 self-stretch grow rounded-2xl overflow-hidden">
@@ -163,9 +168,19 @@ export const SensorDataSection = (): JSX.Element => {
           <div className="flex flex-col items-start gap-4 flex-1 grow">
             <div className="inline-flex items-end gap-3">
               <div className="inline-flex flex-col items-start justify-center gap-1">
-                <h1 className="[font-family:'Inter',Helvetica] font-semibold text-neutral-900 text-2xl tracking-[0] leading-8 whitespace-nowrap">
-                  {gatewayData.name}
-                </h1>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto p-1.5"
+                    onClick={navigateBack}
+                  >
+                    <ChevronLeftIcon className="w-5 h-5" />
+                  </Button>
+                  <h1 className="[font-family:'Inter',Helvetica] font-semibold text-neutral-900 text-2xl tracking-[0] leading-8 whitespace-nowrap">
+                    {selectedDevice || gatewayData.name}
+                  </h1>
+                </div>
               </div>
               <Button
                 variant="outline"
@@ -241,22 +256,24 @@ export const SensorDataSection = (): JSX.Element => {
                   <thead>
                     <tr className="border-b border-[#ebebeb]">
                       <th className="text-left p-4 bg-[#f8f9fa] [font-family:'SF_Pro_Text-Medium',Helvetica] font-medium text-[#5c5c5c] text-sm tracking-[-0.08px] leading-5 min-w-[120px]">
-                        Sensor
+                        Sensorbase
                       </th>
                       {sensorData.slice(0, 9).map((sensor, index) => (
-                        <th key={index} className="text-center p-4 bg-[#f8f9fa] min-w-[120px]">
-                          <div className="flex flex-col items-center gap-2">
-                            <div className="flex items-center gap-1">
-                              <div className="w-2 h-2 bg-[#1fc06a] rounded-full"></div>
+                        <th key={index} className="text-left p-4 bg-[#f8f9fa] min-w-[120px]">
+                          <div className="flex items-center gap-3">
+                            <div className="w-6 h-6 flex items-center justify-center">
+                              <img src="/sensor.svg" alt="SensorbaseIcon" className="h-5 w-5" />
+                            </div>
+                            <div className="flex flex-col">
                               <span className="text-[#335cff] [font-family:'SF_Pro-Medium',Helvetica] font-medium text-sm tracking-[-0.08px] leading-5">
                                 SBYY
                               </span>
-                            </div>
-                            <div className="text-[#335cff] [font-family:'SF_Pro-Medium',Helvetica] font-medium text-sm tracking-[-0.08px] leading-5">
-                              MMDD
-                            </div>
-                            <div className="text-[#335cff] [font-family:'SF_Pro-Medium',Helvetica] font-medium text-sm tracking-[-0.08px] leading-5">
-                              XXX
+                              <span className="text-[#335cff] [font-family:'SF_Pro-Medium',Helvetica] font-medium text-sm tracking-[-0.08px] leading-5">
+                                MMDD
+                              </span>
+                              <span className="text-[#335cff] [font-family:'SF_Pro-Medium',Helvetica] font-medium text-sm tracking-[-0.08px] leading-5">
+                                XXX
+                              </span>
                             </div>
                           </div>
                         </th>
@@ -270,17 +287,18 @@ export const SensorDataSection = (): JSX.Element => {
                         Status
                       </td>
                       {sensorData.slice(0, 9).map((sensor, index) => (
-                        <td key={index} className="p-4 text-center">
-                          <div className="flex flex-col items-center gap-1">
-                            <div className="flex items-center gap-1">
-                              <div className="w-2 h-2 bg-[#1fc06a] rounded-full"></div>
-                              <span className="text-[#1fc06a] [font-family:'SF_Pro_Text-Medium',Helvetica] font-medium text-xs tracking-[0] leading-4">
-                                LoRa
-                              </span>
+                        <td key={index} className="p-4 text-left">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-1">
+                                <img src="/frame-1000002756.svg" alt="LoRa" className="h-5" />
+                              </div>
+                              <div className="inline-block px-3 py-1 bg-white rounded-[10px] border border-[#ebebeb] w-fit">
+                                <span className="text-[#5c5c5c] [font-family:'SF_Pro_Text-Regular',Helvetica] font-normal text-sm tracking-[-0.08px] leading-5 whitespace-nowrap">
+                                  Check
+                                </span>
+                              </div>
                             </div>
-                            <span className="text-[#5c5c5c] [font-family:'SF_Pro_Text-Regular',Helvetica] font-normal text-sm tracking-[-0.08px] leading-5">
-                              Check
-                            </span>
                           </div>
                         </td>
                       ))}
@@ -292,8 +310,8 @@ export const SensorDataSection = (): JSX.Element => {
                         Last updated
                       </td>
                       {sensorData.slice(0, 9).map((sensor, index) => (
-                        <td key={index} className="p-4 text-center">
-                          <div className="flex flex-col items-center gap-1">
+                        <td key={index} className="p-4 text-left">
+                          <div className="flex flex-col gap-1">
                             <span className="text-[#5c5c5c] [font-family:'SF_Pro_Text-Regular',Helvetica] font-normal text-sm tracking-[-0.08px] leading-5">
                               {sensor.lastUpdated.date}
                             </span>
@@ -311,7 +329,7 @@ export const SensorDataSection = (): JSX.Element => {
                         Atm Pressure
                       </td>
                       {sensorData.slice(0, 9).map((sensor, index) => (
-                        <td key={index} className="p-4 text-center">
+                        <td key={index} className="p-4 text-left">
                           <span className="text-[#5c5c5c] [font-family:'SF_Pro_Text-Regular',Helvetica] font-normal text-sm tracking-[-0.08px] leading-5">
                             {sensor.atmPressure}
                           </span>
@@ -325,7 +343,7 @@ export const SensorDataSection = (): JSX.Element => {
                         Carbon Dioxide
                       </td>
                       {sensorData.slice(0, 9).map((sensor, index) => (
-                        <td key={index} className="p-4 text-center">
+                        <td key={index} className="p-4 text-left">
                           <span className="text-[#5c5c5c] [font-family:'SF_Pro_Text-Regular',Helvetica] font-normal text-sm tracking-[-0.08px] leading-5">
                             {sensor.carbonDioxide}
                           </span>
@@ -339,7 +357,7 @@ export const SensorDataSection = (): JSX.Element => {
                         Humidity
                       </td>
                       {sensorData.slice(0, 9).map((sensor, index) => (
-                        <td key={index} className="p-4 text-center">
+                        <td key={index} className="p-4 text-left">
                           <span className="text-[#5c5c5c] [font-family:'SF_Pro_Text-Regular',Helvetica] font-normal text-sm tracking-[-0.08px] leading-5">
                             {sensor.humidity}
                           </span>
@@ -353,7 +371,7 @@ export const SensorDataSection = (): JSX.Element => {
                         Soil EC
                       </td>
                       {sensorData.slice(0, 9).map((sensor, index) => (
-                        <td key={index} className="p-4 text-center">
+                        <td key={index} className="p-4 text-left">
                           <span className="text-[#5c5c5c] [font-family:'SF_Pro_Text-Regular',Helvetica] font-normal text-sm tracking-[-0.08px] leading-5">
                             {sensor.soilEC}
                           </span>
@@ -367,7 +385,7 @@ export const SensorDataSection = (): JSX.Element => {
                         Soil Moisture
                       </td>
                       {sensorData.slice(0, 9).map((sensor, index) => (
-                        <td key={index} className="p-4 text-center">
+                        <td key={index} className="p-4 text-left">
                           <span className="text-[#5c5c5c] [font-family:'SF_Pro_Text-Regular',Helvetica] font-normal text-sm tracking-[-0.08px] leading-5">
                             {sensor.soilMoisture}
                           </span>
@@ -381,7 +399,7 @@ export const SensorDataSection = (): JSX.Element => {
                         Soil Temperature
                       </td>
                       {sensorData.slice(0, 9).map((sensor, index) => (
-                        <td key={index} className="p-4 text-center">
+                        <td key={index} className="p-4 text-left">
                           <span className="text-[#5c5c5c] [font-family:'SF_Pro_Text-Regular',Helvetica] font-normal text-sm tracking-[-0.08px] leading-5">
                             {sensor.soilTemperature}
                           </span>
@@ -395,7 +413,7 @@ export const SensorDataSection = (): JSX.Element => {
                         Temperature
                       </td>
                       {sensorData.slice(0, 9).map((sensor, index) => (
-                        <td key={index} className="p-4 text-center">
+                        <td key={index} className="p-4 text-left">
                           <span className="text-[#5c5c5c] [font-family:'SF_Pro_Text-Regular',Helvetica] font-normal text-sm tracking-[-0.08px] leading-5">
                             {sensor.temperature}
                           </span>

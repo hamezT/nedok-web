@@ -5,7 +5,7 @@ import {
   FilterIcon,
   SearchIcon,
 } from "lucide-react";
-import React, { useState } from "react";
+import { useState } from "react";
 import { Button } from "../../../../components/ui/button";
 import { Input } from "../../../../components/ui/input";
 import {
@@ -131,7 +131,7 @@ export const DeviceStatusSection = (): JSX.Element => {
           <div className="relative">
             <SearchIcon className="absolute left-2 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral-400" />
             <Input
-              placeholder="SearchIcon..."
+              placeholder="Search..."
               className="pl-9 pr-3 py-1.5 text-sm text-neutral-400 [font-family:'SF_Pro_Text-Regular',Helvetica] tracking-[-0.08px] border-[#ebebeb]"
             />
           </div>

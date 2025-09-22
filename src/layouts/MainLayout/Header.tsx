@@ -1,7 +1,24 @@
 import { BellIcon, SettingsIcon } from "lucide-react";
 import { Button } from "../../components/ui/button";
+import { Breadcrumb } from "../../components/ui/breadcrumb";
+import { useDevice } from "../../contexts/DeviceContext";
 
 export const Header = (): JSX.Element => {
+  const { selectedDevice, setSelectedDevice } = useDevice();
+
+  const breadcrumbItems = [
+    {
+      label: "Home",
+      onClick: () => setSelectedDevice(null),
+    },
+    ...(selectedDevice
+      ? [
+          {
+            label: "Gateway List",
+          },
+        ]
+      : []),
+  ];
   return (
     <header className="flex h-16 items-center gap-4 pl-0 pr-5 py-3 relative w-full bg-white border-b border-solid border-[#ebebeb]">
       <img
@@ -10,7 +27,9 @@ export const Header = (): JSX.Element => {
         src="/sidebar-header.svg"
       />
 
-      <div className="flex items-center gap-1 relative flex-1 grow" />
+      <div className="flex items-center gap-1 relative flex-1 grow">
+        <Breadcrumb items={breadcrumbItems} />
+      </div>
 
       <nav className="inline-flex gap-4 flex-[0_0_auto] items-center relative">
         <Button

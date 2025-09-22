@@ -4,8 +4,9 @@ import {
   FilterIcon,
   SearchIcon,
 } from "lucide-react";
-import React, { useState } from "react";
+import { useState } from "react";
 import { Button } from "../../../../components/ui/button";
+import { useDevice } from "../../../../contexts/DeviceContext";
 import {
   Collapsible,
   CollapsibleContent,
@@ -92,6 +93,7 @@ const gatewayDevices = [
 ];
 
 export const DeviceListSection = (): JSX.Element => {
+  const { setSelectedDevice } = useDevice();
   const [surveillanceExpanded, setSurveillanceExpanded] = useState(true);
   const [gatewayExpanded, setGatewayExpanded] = useState(true);
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({
@@ -106,6 +108,12 @@ export const DeviceListSection = (): JSX.Element => {
     }));
   };
 
+  const handleDeviceClick = (device: any) => {
+    if (device.icon === "/sensor-base.svg") {
+      setSelectedDevice(device.id);
+    }
+  };
+
   const renderDeviceItem = (device: any, level = 0) => {
     const paddingLeft = level === 0 ? "pl-6" : level === 1 ? "pl-12" : "pl-24";
     const hasChildren = device.children && device.children.length > 0;
@@ -115,6 +123,7 @@ export const DeviceListSection = (): JSX.Element => {
       <div key={device.id} className="flex flex-col">
         <div
           className={`flex items-center gap-1.5 pr-2 py-2 ${paddingLeft} rounded-lg hover:bg-gray-50 cursor-pointer`}
+          onClick={() => handleDeviceClick(device)}
         >
           {hasChildren && (
             <Button
@@ -147,7 +156,7 @@ export const DeviceListSection = (): JSX.Element => {
   };
 
   return (
-    <aside className="flex flex-col w-[280px] h-[960px] border-r border-[#ebebeb] bg-white">
+    <aside className="flex flex-col w-[280px] h-screen border-r border-[#ebebeb] bg-white">
       <header className="flex items-center gap-4 px-4 py-5 h-[52px] border-b border-[#ebebeb]">
         <h1 className="flex-1 [font-family:'SF_Pro_Display-Bold',Helvetica] font-bold text-neutral-900 text-base leading-7">
           Devices
@@ -165,12 +174,12 @@ export const DeviceListSection = (): JSX.Element => {
         </Button>
       </header>
 
-      <main className="flex flex-col flex-1 px-4 py-5 gap-2 overflow-y-auto">
+      <main className="flex flex-col flex-1 px-4 py-5 gap-2 overflow-y-auto min-h-0">
         <div className="flex flex-col gap-1">
           <div className="relative">
             <SearchIcon className="absolute left-2 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral-400" />
             <Input
-              placeholder="SearchIcon..."
+              placeholder="Search..."
               className="pl-8 pr-4 py-1.5 border-[#ebebeb] [font-family:'SF_Pro_Text-Regular',Helvetica] font-normal text-neutral-400 text-sm tracking-[-0.08px]"
             />
           </div>
@@ -179,8 +188,10 @@ export const DeviceListSection = (): JSX.Element => {
         <div className="flex flex-col gap-1">
           <Select defaultValue="all">
             <SelectTrigger className="flex items-center gap-2 pl-3 pr-2.5 py-2.5 border-[#ebebeb] shadow-regular-shadow-x-small rounded-[10px]">
-              <FilterIcon className="w-5 h-5" />
-              <SelectValue />
+              <div className="flex items-center gap-2">
+                <FilterIcon className="w-5 h-5" />
+                <span className="font-paragraph-small text-[#5c5c5c]">All</span>
+              </div>
             </SelectTrigger>
             <SelectContent>
               <SelectItem
@@ -203,7 +214,7 @@ export const DeviceListSection = (): JSX.Element => {
                 className={`w-[18px] h-[18px] transition-transform ${surveillanceExpanded ? "" : "-rotate-90"}`}
               />
               <span className="flex-1 text-left [font-family:'SF_Pro-Medium',Helvetica] font-medium text-[#5c5c5c] text-sm tracking-[-0.08px] leading-5">
-                Surveilliance CameraIcon
+                Surveilliance Camera
               </span>
             </CollapsibleTrigger>
             <CollapsibleContent>
