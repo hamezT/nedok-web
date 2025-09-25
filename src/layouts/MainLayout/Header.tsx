@@ -1,17 +1,24 @@
-import { BellIcon, SettingsIcon, LogOutIcon, UserIcon } from "lucide-react";
+import { BellIcon, SettingsIcon, LogOutIcon, Mail, User, ChevronDownIcon } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Breadcrumb } from "../../components/ui/breadcrumb";
 import { useDevice } from "../../contexts/DeviceContext";
 import { useUser } from "../../hooks/useUserContext";
+import { useState } from "react";
 
 export const Header = (): JSX.Element => {
   const { selectedDevice, setSelectedDevice } = useDevice();
   const { user, logout } = useUser();
+  const [isAvatarOpen, setIsAvatarOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
     // Use window.location to force a full page reload
     window.location.href = '/login';
+  };
+
+  const handleAccountSettings = () => {
+    // TODO: Implement account settings navigation
+    console.log('Navigate to account settings');
   };
 
   const breadcrumbItems = [
@@ -56,24 +63,74 @@ export const Header = (): JSX.Element => {
           <SettingsIcon className="w-[18.29px] h-[18.29px]" />
         </Button>
 
-        {/* User Info and Logout */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <UserIcon className="w-4 h-4" />
-            <span className="hidden sm:inline">{user?.name || user?.email || 'User'}</span>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleLogout}
-            className="flex gap-2 items-center bg-white border border-solid border-[#ebebeb] shadow-sm hover:bg-red-50 hover:border-red-300 hover:text-red-600"
+        {/* Avatar Dropdown */}
+        <div className="relative">
+          <div
+            className="relative w-10 h-10 rounded-full overflow-hidden cursor-pointer hover:ring-2 hover:ring-[#10b981] transition-all"
+            onClick={() => setIsAvatarOpen(!isAvatarOpen)}
           >
-            <LogOutIcon className="w-4 h-4" />
-            <span className="hidden sm:inline">Logout</span>
-          </Button>
-        </div>
+            <img
+              className="w-full h-full object-cover"
+              alt="Avatar"
+              src="/avatar.svg"
+            />
+            <ChevronDownIcon className="absolute bottom-0 right-0 w-3 h-3 bg-white rounded-full border border-gray-300" />
+          </div>
 
-        <img className="relative w-10 h-10" alt="Avatar" src="/avatar.svg" />
+          {/* Dropdown Menu */}
+          {isAvatarOpen && (
+            <div className="absolute right-0 top-12 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+              <div className="p-4 border-b">
+                <div className="flex items-center gap-3">
+                  <img
+                    className="w-10 h-10 rounded-full"
+                    alt="Avatar"
+                    src="/avatar.svg"
+                  />
+                  <div>
+                    <p className="font-medium text-sm">{user?.name || 'User'}</p>
+                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                      <Mail className="w-3 h-3" />
+                      {user?.email || 'test@gmail.com'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div
+                className="p-3 hover:bg-gray-50 cursor-pointer"
+                onClick={() => {
+                  handleAccountSettings();
+                  setIsAvatarOpen(false);
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <User className="w-4 h-4" />
+                  <span>Account Settings</span>
+                </div>
+              </div>
+              <div
+                className="p-3 hover:bg-red-50 cursor-pointer text-red-600"
+                onClick={() => {
+                  handleLogout();
+                  setIsAvatarOpen(false);
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <LogOutIcon className="w-4 h-4" />
+                  <span>Logout</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Click outside to close */}
+          {isAvatarOpen && (
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setIsAvatarOpen(false)}
+            />
+          )}
+        </div>
       </nav>
     </header>
   );

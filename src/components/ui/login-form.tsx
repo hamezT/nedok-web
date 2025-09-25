@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./car
 import { Input } from "./input";
 import { Label } from "./label";
 import { Logo } from "./logo";
+import { LoadingScreen } from "./loading-screen";
 import { login } from "../../services/authService";
 import { setCookie, clearLocalStorageAuthData } from "../../utils/cookieUtils";
 
@@ -20,17 +21,41 @@ const LoginForm = React.forwardRef<HTMLFormElement, LoginFormProps>(
     });
     const [isSubmitting, setIsSubmitting] = React.useState(false);
     const [error, setError] = React.useState("");
+    const [warning, setWarning] = React.useState("");
+    const [isRedirecting, setIsRedirecting] = React.useState(false);
+
+    // Helper function để trim chỉ leading/trailing whitespace
+    const trimInput = (value: string) => {
+      return value.replace(/^\s+|\s+$/g, '');
+    };
+
+    // Helper function để kiểm tra khoảng trắng thừa
+    const hasLeadingTrailingSpaces = (value: string) => {
+      return /^\s|\s$/.test(value);
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       setError("");
+      setWarning("");
       setIsSubmitting(true);
 
-      console.log('Login form submitted with:', { email: formData.email, password: '***' });
+      // Kiểm tra khoảng trắng thừa trước khi submit
+      const emailHasSpaces = hasLeadingTrailingSpaces(formData.email);
+      const passwordHasSpaces = hasLeadingTrailingSpaces(formData.password);
 
+      if (emailHasSpaces || passwordHasSpaces) {
+        const warningMessage = "Khoảng trắng thừa đã được loại bỏ tự động.";
+        setWarning(warningMessage);
+      }
+
+      // Trim chỉ leading/trailing whitespace trước khi submit để đảm bảo
+      const trimmedData = {
+        email: trimInput(formData.email),
+        password: trimInput(formData.password),
+      };
       try {
-        const response = await login(formData.email, formData.password);
-        console.log('Login successful, received tokens');
+        const response = await login(trimmedData.email, trimmedData.password);
 
         // Clear old localStorage auth data
         clearLocalStorageAuthData();
@@ -51,16 +76,18 @@ const LoginForm = React.forwardRef<HTMLFormElement, LoginFormProps>(
           path: '/',
           sameSite: 'Strict'
         });
-
-        console.log('Tokens stored in cookies, old localStorage cleared');
-
         // Call onSubmit if provided
-        onSubmit?.(formData);
+        onSubmit?.(trimmedData);
 
-        // Navigate to home page
-        // Use window.location to force a full page reload and ensure auth state is updated
-        console.log('Redirecting to home page...');
-        window.location.href = '/';
+        // Hiển thị loading screen trước khi chuyển trang
+        setIsRedirecting(true);
+
+        // Delay để user thấy loading screen
+        setTimeout(() => {
+          // Navigate to home page
+          // Use window.location to force a full page reload and ensure auth state is updated
+          window.location.href = '/';
+        }, 1500); // 1.5 giây delay
       } catch (error: any) {
         console.error('Login failed:', error);
         setError(error.message || 'Login failed. Please try again.');
@@ -75,10 +102,23 @@ const LoginForm = React.forwardRef<HTMLFormElement, LoginFormProps>(
         ...prev,
         [name]: value,
       }));
+
+      // Kiểm tra warning real-time cho field hiện tại
+      const hasSpaces = hasLeadingTrailingSpaces(value);
+      if (hasSpaces && value.length > 0) {
+        setWarning(`Phát hiện khoảng trắng thừa ở ${name === 'email' ? 'email' : 'mật khẩu'}. Sẽ được loại bỏ khi đăng nhập.`);
+      } else {
+        // Xóa warning chỉ khi cả hai field đều không có khoảng trắng thừa
+        const otherField = name === 'email' ? formData.password : formData.email;
+        if (!hasLeadingTrailingSpaces(otherField)) {
+          setWarning("");
+        }
+      }
     };
 
     return (
-      <Card className="w-full max-w-md mx-auto border border-gray-200 shadow-xl bg-white/98 backdrop-blur-sm">
+      <>
+        <Card className="w-full max-w-md mx-auto border border-gray-200 shadow-xl bg-white/98 backdrop-blur-sm">
         <CardHeader className="space-y-1 pb-2 relative">
           {/* Accent border top */}
           <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-20 h-0.5 bg-gradient-to-r from-[#E97132] to-[#92D050] rounded-full"></div>
@@ -101,9 +141,14 @@ const LoginForm = React.forwardRef<HTMLFormElement, LoginFormProps>(
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
               <div className="font-medium">Login Failed</div>
               <div className="mt-1">{error}</div>
-              <div className="mt-2 text-xs text-red-600">
-                Check the browser console for detailed error information.
-              </div>
+            </div>
+          )}
+
+          {/* Warning Message */}
+          {warning && (
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-md text-sm">
+              <div className="font-medium">Thông báo</div>
+              <div className="mt-1">{warning}</div>
             </div>
           )}
         </CardHeader>
@@ -152,7 +197,15 @@ const LoginForm = React.forwardRef<HTMLFormElement, LoginFormProps>(
             </Button>
           </div>
         </CardContent>
-      </Card>
+        </Card>
+
+        {/* Loading Screen */}
+        {isRedirecting && (
+          <LoadingScreen
+            message="Đăng nhập thành công! Đang chuyển hướng..."
+          />
+        )}
+      </>
     );
   }
 );

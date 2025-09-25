@@ -1,12 +1,8 @@
 import { getEndpoint } from './endpointService';
 import { setCookie, getCookie, removeCookie, clearLocalStorageAuthData } from '../utils/cookieUtils';
+import { DeviceProfile } from '../types';
 
-export interface DeviceInfo {
-  id: { id: string };
-  name: string;
-  label?: string;
-  type?: string;
-}
+export type { DeviceProfile };
 
 export interface LoginResponse {
   token: string;
@@ -147,87 +143,19 @@ export const getUserInfo = async (): Promise<UserInfo> => {
   return response.json();
 };
 
-export const fetchUserDevices = async (): Promise<any> => {
+
+
+export const fetchDeviceProfileNames = async (activeOnly: boolean = false): Promise<DeviceProfile[]> => {
   const token = getCookie('accessToken');
   if (!token) {
     throw new Error('Access Token not found');
   }
 
-  const response = await fetch(getEndpoint('/api/user/devices?pageSize=100&page=0'), {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Authorization': `Bearer ${token}`,
-    },
+  const queryParams = new URLSearchParams({
+    activeOnly: activeOnly.toString(),
   });
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || 'Unable to get device list');
-  }
-
-  return response.json();
-};
-
-export const fetchRelationsFrom = async (fromId: string, fromType: string = 'DEVICE'): Promise<any> => {
-  const token = getCookie('accessToken');
-  if (!token) {
-    throw new Error('Access Token not found');
-  }
-
-  const response = await fetch(getEndpoint(`/api/relations/info?fromId=${fromId}&fromType=${fromType}`), {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Authorization': `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || `Unable to get relations from ${fromId}`);
-  }
-
-  return response.json();
-};
-
-export const fetchRelationsTo = async (toId: string, toType: string = 'DEVICE'): Promise<any> => {
-  const token = getCookie('accessToken');
-  if (!token) {
-    throw new Error('Access Token not found');
-  }
-
-  const response = await fetch(getEndpoint(`/api/relations?toId=${toId}&toType=${toType}`), {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Authorization': `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || `Unable to get relations to ${toId}`);
-  }
-
-  return response.json();
-};
-
-export interface DeviceProfileName {
-  id: {
-    entityType: string;
-    id: string;
-  };
-  name: string;
-}
-
-export const fetchDeviceProfileNames = async (): Promise<DeviceProfileName[]> => {
-  const token = getCookie('accessToken');
-  if (!token) {
-    throw new Error('Access Token not found');
-  }
-
-  const response = await fetch(getEndpoint('/api/deviceProfile/names?activeOnly=true'), {
+  const response = await fetch(getEndpoint(`/api/deviceProfile/names?${queryParams}`), {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -326,3 +254,4 @@ export const clearAuthData = (): void => {
   // Clear old localStorage data (for migration)
   clearLocalStorageAuthData();
 };
+
