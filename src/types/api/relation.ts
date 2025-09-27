@@ -18,3 +18,10 @@ export interface DeviceRelation {
   typeGroup: string;
   additionalInfo: any;
 }
+
+export interface DeviceRelationToResponse {
+  data: DeviceRelation[];
+  totalPages: number;
+  totalElements: number;
+  hasNext: boolean;
+}

@@ -6,7 +6,7 @@ interface LoadingScreenProps {
 }
 
 export const LoadingScreen: React.FC<LoadingScreenProps> = ({
-  message = "Đang chuyển hướng...",
+  message = "Redirecting...",
   isVisible = true,
 }) => {
   if (!isVisible) return null;
@@ -44,7 +44,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
             {message}
           </h3>
           <p className="text-sm text-gray-600 animate-pulse">
-            Vui lòng chờ trong giây lát...
+            Please wait a moment...
           </p>
         </div>
 

@@ -24,12 +24,12 @@ const LoginForm = React.forwardRef<HTMLFormElement, LoginFormProps>(
     const [warning, setWarning] = React.useState("");
     const [isRedirecting, setIsRedirecting] = React.useState(false);
 
-    // Helper function để trim chỉ leading/trailing whitespace
+    // Helper function to trim only leading/trailing whitespace
     const trimInput = (value: string) => {
       return value.replace(/^\s+|\s+$/g, '');
     };
 
-    // Helper function để kiểm tra khoảng trắng thừa
+    // Helper function to check for extra whitespace
     const hasLeadingTrailingSpaces = (value: string) => {
       return /^\s|\s$/.test(value);
     };
@@ -40,16 +40,16 @@ const LoginForm = React.forwardRef<HTMLFormElement, LoginFormProps>(
       setWarning("");
       setIsSubmitting(true);
 
-      // Kiểm tra khoảng trắng thừa trước khi submit
+      // Check for extra whitespace before submit
       const emailHasSpaces = hasLeadingTrailingSpaces(formData.email);
       const passwordHasSpaces = hasLeadingTrailingSpaces(formData.password);
 
       if (emailHasSpaces || passwordHasSpaces) {
-        const warningMessage = "Khoảng trắng thừa đã được loại bỏ tự động.";
+        const warningMessage = "Extra whitespace has been automatically removed.";
         setWarning(warningMessage);
       }
 
-      // Trim chỉ leading/trailing whitespace trước khi submit để đảm bảo
+      // Trim only leading/trailing whitespace before submit to ensure
       const trimmedData = {
         email: trimInput(formData.email),
         password: trimInput(formData.password),
@@ -79,15 +79,15 @@ const LoginForm = React.forwardRef<HTMLFormElement, LoginFormProps>(
         // Call onSubmit if provided
         onSubmit?.(trimmedData);
 
-        // Hiển thị loading screen trước khi chuyển trang
+        // Show loading screen before page transition
         setIsRedirecting(true);
 
-        // Delay để user thấy loading screen
+        // Delay to let user see loading screen
         setTimeout(() => {
           // Navigate to home page
           // Use window.location to force a full page reload and ensure auth state is updated
           window.location.href = '/';
-        }, 1500); // 1.5 giây delay
+        }, 1500); // 1.5 second delay
       } catch (error: any) {
         console.error('Login failed:', error);
         setError(error.message || 'Login failed. Please try again.');
@@ -103,12 +103,12 @@ const LoginForm = React.forwardRef<HTMLFormElement, LoginFormProps>(
         [name]: value,
       }));
 
-      // Kiểm tra warning real-time cho field hiện tại
+      // Check warning in real-time for current field
       const hasSpaces = hasLeadingTrailingSpaces(value);
       if (hasSpaces && value.length > 0) {
-        setWarning(`Phát hiện khoảng trắng thừa ở ${name === 'email' ? 'email' : 'mật khẩu'}. Sẽ được loại bỏ khi đăng nhập.`);
+        setWarning(`Extra whitespace detected in ${name === 'email' ? 'email' : 'password'}. Will be removed during login.`);
       } else {
-        // Xóa warning chỉ khi cả hai field đều không có khoảng trắng thừa
+        // Clear warning only when both fields have no extra whitespace
         const otherField = name === 'email' ? formData.password : formData.email;
         if (!hasLeadingTrailingSpaces(otherField)) {
           setWarning("");
@@ -202,7 +202,7 @@ const LoginForm = React.forwardRef<HTMLFormElement, LoginFormProps>(
         {/* Loading Screen */}
         {isRedirecting && (
           <LoadingScreen
-            message="Đăng nhập thành công! Đang chuyển hướng..."
+            message="Login successful! Redirecting..."
           />
         )}
       </>
