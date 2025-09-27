@@ -12,7 +12,7 @@ interface MainLayoutProps {
 const MemoizedHeader = memo(Header);
 
 const MainLayoutContent = ({ children, sidebar }: MainLayoutProps): JSX.Element => {
-  const { isSidebarOpen, toggleSidebar } = useMobile();
+  const { isSidebarOpen, isSidebarCollapsed, toggleSidebar } = useMobile();
 
   return (
     <div className="flex flex-col w-full min-h-screen items-start relative bg-[#f3f8ee]">
@@ -38,9 +38,11 @@ const MainLayoutContent = ({ children, sidebar }: MainLayoutProps): JSX.Element 
 
         {/* Sidebar with DeviceList */}
         <div
-          className={`fixed lg:static inset-y-0 left-0 w-[280px] bg-white transform transition-transform lg:transform-none ${
+          className={`fixed lg:static inset-y-0 left-0 bg-white transform transition-all duration-300 lg:transform-none z-40 ${
             isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-          } lg:translate-x-0 z-40`}
+          } lg:translate-x-0 ${
+            isSidebarCollapsed ? "lg:w-[80px]" : "lg:w-[280px]"
+          }`}
         >
           {sidebar}
         </div>

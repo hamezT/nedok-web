@@ -6,12 +6,9 @@ import {
   ChevronsRightIcon,
   SearchIcon,
   SettingsIcon,
-  WifiIcon,
-  WifiOffIcon,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigation } from "../../../../hooks/useNavigation";
-import { useWebSocket, useGatewayMeasurementStatus } from "../../../../hooks/useWebSocket";
 import { Badge } from "../../../../components/ui/badge";
 import { Button } from "../../../../components/ui/button";
 import { Input } from "../../../../components/ui/input";
@@ -30,13 +27,12 @@ import {
   TableHeader,
   TableRow,
 } from "../../../../components/ui/table";
-import { fetchGatewayDevices, fetchGatewayMeasurementAndUploadIntervalStatus, subscribeToGatewayMeasurementAndUploadIntervalStatus, unsubscribeFromGatewayMeasurementAndUploadIntervalStatus } from "../../../../services/deviceService";
+import { fetchGatewayDevices, fetchGatewayMeasurementAndUploadIntervalStatus } from "../../../../services/deviceService";
 import { DeviceInfo } from "../../../../types";
 
 // Transform DeviceInfo to Gateway format
-const transformGatewayData = (device: DeviceInfo, deviceAttributes?: Record<string, any>, isWebSocketConnected?: boolean) => {
-  // Use WebSocket connection status if available, otherwise fall back to device.active
-  const isActive = isWebSocketConnected !== undefined ? isWebSocketConnected : device.active;
+const transformGatewayData = (device: DeviceInfo, deviceAttributes?: Record<string, any>) => {
+  const isActive = device.active;
 
   // Get measurement status from API attributes
   const measurementStartedAttr = deviceAttributes?.measurement_started?.[0];
@@ -143,6 +139,7 @@ export const GatewayListSection = (): JSX.Element => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
+  const [debouncedSearchText, setDebouncedSearchText] = useState("");
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(0);
@@ -150,19 +147,35 @@ export const GatewayListSection = (): JSX.Element => {
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
 
-  // WebSocket integration
-  const { isConnected, error: wsError } = useWebSocket({
-    onConnectionChange: (connected) => {
-      console.log('WebSocket connection status:', connected);
-    },
-    onError: (err) => {
-      console.error('WebSocket error:', err);
-    }
-  });
+  // Custom hook for debouncing search text
+  const useDebounce = (value: string, delay: number) => {
+    const [debouncedValue, setDebouncedValue] = useState(value);
 
-  // Update error state to include WebSocket errors
-  const displayError = error || wsError?.message;
+    useEffect(() => {
+      const handler = setTimeout(() => {
+        setDebouncedValue(value);
+      }, delay);
 
+      return () => {
+        clearTimeout(handler);
+      };
+    }, [value, delay]);
+
+    return debouncedValue;
+  };
+
+  // Debounce search text with 500ms delay
+  const debouncedSearch = useDebounce(searchText, 500);
+
+  // Update debounced search text when debounced value changes
+  useEffect(() => {
+    setDebouncedSearchText(debouncedSearch);
+  }, [debouncedSearch]);
+
+  // Reset to first page when debounced search text changes
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [debouncedSearchText]);
 
   useEffect(() => {
     const loadGatewayDevices = async () => {
@@ -174,11 +187,12 @@ export const GatewayListSection = (): JSX.Element => {
         const params = {
           pageSize: pageSize,
           page: currentPage,
-          ...(searchText.trim() && { textSearch: searchText.trim() })
+          ...(debouncedSearchText.trim() && { textSearch: debouncedSearchText.trim() })
         };
 
         console.log('API Parameters:', params);
         console.log('Pagination state - pageSize:', pageSize, 'currentPage:', currentPage);
+        console.log('Search states - searchText:', searchText, 'debouncedSearchText:', debouncedSearchText);
 
         const result = await fetchGatewayDevices(params);
         let devices = result.data;
@@ -238,20 +252,7 @@ export const GatewayListSection = (): JSX.Element => {
     };
 
     loadGatewayDevices();
-  }, [searchText, currentPage, pageSize]);
-
-  // WebSocket subscription management - using the new hook
-  const { data: wsMeasurementData, isConnected: wsConnected } = useGatewayMeasurementStatus(
-    gatewayDevices.map(device => device.id.id),
-    true // Always enabled when we have devices
-  );
-
-  // Merge REST API data with WebSocket data
-  useEffect(() => {
-    if (wsMeasurementData && Object.keys(wsMeasurementData).length > 0) {
-      setMeasurementStatus(prev => ({ ...prev, ...wsMeasurementData }));
-    }
-  }, [wsMeasurementData]);
+  }, [debouncedSearchText, currentPage, pageSize]);
 
   const handleRowClick = (gatewayName: string) => {
     console.log("Row clicked with gateway name:", gatewayName); // Debug log
@@ -268,14 +269,12 @@ export const GatewayListSection = (): JSX.Element => {
       <div className="flex items-start justify-around gap-2.5 relative flex-1 self-stretch grow rounded-2xl overflow-hidden">
         <div className="flex flex-col items-start gap-4 p-2 lg:p-4 relative flex-1 self-stretch grow bg-white">
           <header className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 relative self-stretch w-full flex-[0_0_auto] bg-transparent">
-            <div className="flex items-center gap-2">
-              <h1 className="[font-family:'Inter',Helvetica] font-semibold text-neutral-900 text-xl lg:text-2xl tracking-[0] leading-8">
-                Gateway lists
-              </h1>
-            </div>
+            <h1 className="[font-family:'Inter',Helvetica] font-semibold text-neutral-900 text-xl lg:text-2xl tracking-[0] leading-8">
+              Gateway lists
+            </h1>
 
-            <div className="flex w-full lg:w-80 items-center relative">
-              <div className="flex items-center w-full">
+            <div className="flex w-full lg:w-80 gap-3 items-center relative">
+              <div className="flex-col gap-1 flex items-start relative flex-1 grow">
                 <div className="relative w-full">
                   <SearchIcon className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral-400" />
                   <Input
@@ -296,11 +295,11 @@ export const GatewayListSection = (): JSX.Element => {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#E97132]"></div>
                 <p className="mt-2 text-sm text-gray-500">Loading gateways...</p>
               </div>
-            ) : displayError ? (
+            ) : error ? (
               <div className="flex flex-col items-center justify-center flex-1 py-8">
                 <div className="text-red-500 text-sm text-center">
                   <p className="mb-2">⚠️ Error loading gateways</p>
-                  <p>{displayError}</p>
+                  <p>{error}</p>
                   <button
                     onClick={() => window.location.reload()}
                     className="mt-2 px-3 py-1 bg-[#E97132] text-white rounded text-xs hover:bg-[#E97132]/80"
@@ -343,7 +342,7 @@ export const GatewayListSection = (): JSX.Element => {
                   ) : (
                     gatewayDevices.map((device) => {
                       const deviceMeasurementStatus = measurementStatus[device.id.id] || {};
-                      const gateway = transformGatewayData(device, deviceMeasurementStatus, wsConnected);
+                      const gateway = transformGatewayData(device, deviceMeasurementStatus);
                       return (
                         <TableRow
                           key={device.id.id}
@@ -406,11 +405,11 @@ export const GatewayListSection = (): JSX.Element => {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#E97132]"></div>
                 <p className="mt-2 text-sm text-gray-500">Loading gateways...</p>
               </div>
-            ) : displayError ? (
+            ) : error ? (
               <div className="flex flex-col items-center justify-center py-8">
                 <div className="text-red-500 text-sm text-center">
                   <p className="mb-2">⚠️ Error loading gateways</p>
-                  <p>{displayError}</p>
+                  <p>{error}</p>
                   <button
                     onClick={() => window.location.reload()}
                     className="mt-2 px-3 py-1 bg-[#E97132] text-white rounded text-xs hover:bg-[#E97132]/80"
@@ -428,7 +427,7 @@ export const GatewayListSection = (): JSX.Element => {
             ) : (
               gatewayDevices.map((device) => {
                 const deviceMeasurementStatus = measurementStatus[device.id.id] || {};
-                const gateway = transformGatewayData(device, deviceMeasurementStatus, wsConnected);
+                const gateway = transformGatewayData(device, deviceMeasurementStatus);
                 return (
                   <GatewayCard key={device.id.id} gateway={gateway} onClick={handleRowClick} />
                 );

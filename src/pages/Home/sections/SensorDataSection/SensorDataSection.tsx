@@ -29,7 +29,7 @@ const gatewayData = {
 
 const sensorData = [
   {
-    id: "SBYYMMDDXXX", 
+    id: "SBYYMMDDXXX",
     status: "Check",
     lastUpdated: { date: "2025-01-05", time: "10:25:04" },
     atmPressure: "382 hPa",
@@ -176,11 +176,9 @@ export const SensorDataSection = (): JSX.Element => {
                   >
                     <ChevronLeftIcon className="w-5 h-5" />
                   </Button>
-                  <div className="flex items-center gap-2">
-                    <h1 className="[font-family:'Inter',Helvetica] font-semibold text-neutral-900 text-2xl tracking-[0] leading-8 whitespace-nowrap">
-                      {selectedDevice || gatewayData.name}
-                    </h1>
-                  </div>
+                  <h1 className="[font-family:'Inter',Helvetica] font-semibold text-neutral-900 text-2xl tracking-[0] leading-8 whitespace-nowrap">
+                    {selectedDevice || gatewayData.name}
+                  </h1>
                 </div>
               </div>
               <Button

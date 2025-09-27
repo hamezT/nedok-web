@@ -3,12 +3,14 @@ import {
   ChevronRightIcon,
   FilterIcon,
   SearchIcon,
+  Upload,
 } from "lucide-react";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "../../../../components/ui/button";
 
 import { Tooltip } from "../../../../components/ui/tooltip";
 import { useDevice } from "../../../../contexts/DeviceContext";
+import { useMobile } from "../../../../contexts/MobileContext";
 import { Input } from "../../../../components/ui/input";
 import {
   Collapsible,
@@ -40,6 +42,7 @@ const getProfileDisplayInfo = (profileName: string) => {
 
 export const DeviceListSection = (): JSX.Element => {
   const { setSelectedDevice } = useDevice();
+  const { isSidebarCollapsed, toggleSidebarCollapsed } = useMobile();
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
   const [deviceProfiles, setDeviceProfiles] = useState<DeviceProfile[]>([]);
   const [selectedProfile, setSelectedProfile] = useState<string>("all");
@@ -50,6 +53,7 @@ export const DeviceListSection = (): JSX.Element => {
   const [error, setError] = useState<string | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchText, setSearchText] = useState<string>("");
+  const [debouncedSearchText, setDebouncedSearchText] = useState<string>("");
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
     Gateway: true,
     Sensorbase: true,
@@ -63,34 +67,79 @@ export const DeviceListSection = (): JSX.Element => {
     return newMap;
   }, [deviceProfiles]);
 
+  // Custom hook for debouncing search text
+  const useDebounce = (value: string, delay: number) => {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+
+    useEffect(() => {
+      const handler = setTimeout(() => {
+        setDebouncedValue(value);
+      }, delay);
+
+      return () => {
+        clearTimeout(handler);
+      };
+    }, [value, delay]);
+
+    return debouncedValue;
+  };
+
+  // Debounce search text with 500ms delay
+  const debouncedSearch = useDebounce(searchText, 500);
+
+  // Update debounced search text when debounced value changes
   useEffect(() => {
-    const loadInitialData = async () => {
+    setDebouncedSearchText(debouncedSearch);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const loadAllData = async () => {
       try {
         setLoading(true);
         setError(null);
+
+        // Load profiles first
         const profiles = await fetchDeviceProfileNames(false);
+        if (isCancelled) return;
         setDeviceProfiles(profiles);
-        await loadAllDevices();
+
+        // Load devices with search
+        const params = { textSearch: debouncedSearchText.trim() };
+        const result = await fetchDeviceInfos(params);
+        if (isCancelled) return;
+        setAllDevices(result.data);
+
+        // Load relations for all devices
+        if (result.data.length > 0) {
+          const deviceIds = result.data.map(device => device.id.id);
+          const relations = await fetchAllRelationsForDevices(deviceIds);
+          if (isCancelled) return;
+          setAllRelations(relations);
+        } else {
+          setAllRelations([]);
+        }
+
       } catch (err) {
-        setError('Failed to load device data. Please try again later.');
-        setLoading(false);
+        if (!isCancelled) {
+          setError('Failed to load device data. Please try again later.');
+          setAllDevices([]);
+          setAllRelations([]);
+        }
+      } finally {
+        if (!isCancelled) {
+          setLoading(false);
+        }
       }
     };
-    loadInitialData();
-  }, []);
 
-  useEffect(() => {
-    loadAllDevices();
-  }, [searchText]);
+    loadAllData();
 
-  useEffect(() => {
-    if (allDevices.length > 0) {
-      loadAllRelations();
-    } else {
-      setAllRelations([]);
-      setLoading(false);
-    }
-  }, [allDevices]);
+    return () => {
+      isCancelled = true;
+    };
+  }, [debouncedSearchText]);
 
   useEffect(() => {
     let devices = allDevices;
@@ -101,42 +150,25 @@ export const DeviceListSection = (): JSX.Element => {
     }
 
     // Apply search filter
-    if (searchText.trim() !== "") {
-      const searchLower = searchText.toLowerCase().trim();
+    if (debouncedSearchText.trim() !== "") {
+      const searchLower = debouncedSearchText.toLowerCase().trim();
       devices = devices.filter(device =>
         device.name.toLowerCase().includes(searchLower)
       );
     }
 
     setFilteredDevices(devices);
-  }, [selectedProfile, allDevices, searchText]);
+  }, [selectedProfile, allDevices, debouncedSearchText]);
 
-  const loadAllDevices = async () => {
-    try {
-      setLoading(true);
-      const params = { textSearch: searchText.trim() };
-      const result = await fetchDeviceInfos(params);
-      setAllDevices(result.data);
-    } catch (err) {
-      setError('Failed to load devices.');
-      setAllDevices([]);
-    }
-  };
 
-  const loadAllRelations = async () => {
-    try {
-      const deviceIds = allDevices.map(device => device.id.id);
-      if (deviceIds.length > 0) {
-        const relations = await fetchAllRelationsForDevices(deviceIds);
-        setAllRelations(relations);
-      }
-    } catch (err) {
-      setError('Failed to load device relations.');
-      setAllRelations([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Tối ưu: Memoize các hàm helper để tránh tạo lại mỗi lần
+  const isRootDevice = useCallback((deviceId: string, parentMap: Map<string, string>, childrenMap: Map<string, string[]>) => {
+    return !parentMap.has(deviceId) && childrenMap.has(deviceId);
+  }, []);
+
+  const isStandaloneDevice = useCallback((deviceId: string, parentMap: Map<string, string>, childrenMap: Map<string, string[]>) => {
+    return !parentMap.has(deviceId) && !childrenMap.has(deviceId);
+  }, []);
 
   const { groupedDevices, childrenMap, deviceMap, parentMap } = useMemo(() => {
     const deviceMap = new Map<string, DeviceInfo>();
@@ -144,126 +176,99 @@ export const DeviceListSection = (): JSX.Element => {
 
     const childrenMap = new Map<string, string[]>();
     const parentMap = new Map<string, string>();
-    const processedDevices = new Set<string>(); // Theo dõi các thiết bị đã được xử lý
 
-    // Xây dựng map cha-con từ relations
+    // Xây dựng maps từ relations - tối ưu bằng cách sử dụng Map thay vì lặp nhiều lần
     allRelations.forEach(relation => {
-      const parentId = relation.from.id; // Parent is FROM
-      const childId = relation.to.id;   // Child is TO
-      
-      // Xử lý cả quan hệ "Registered" và "Manages"
+      const parentId = relation.from.id;
+      const childId = relation.to.id;
+
       if (deviceMap.has(childId) && deviceMap.has(parentId)) {
-        // Kiểm tra xem thiết bị cha có phải là sensorbase và thiết bị con có phải là camera không
-        const parentDevice = deviceMap.get(parentId);
-        const childDevice = deviceMap.get(childId);
-        
-        if (parentDevice && childDevice) {
-          // Thiết lập quan hệ cha-con cho tất cả các loại quan hệ
-          parentMap.set(childId, parentId);
-          if (!childrenMap.has(parentId)) childrenMap.set(parentId, []);
-          
-          // Tránh thêm trùng lặp
-          if (!childrenMap.get(parentId)!.includes(childId)) {
-            childrenMap.get(parentId)!.push(childId);
-          }
+        parentMap.set(childId, parentId);
+
+        if (!childrenMap.has(parentId)) {
+          childrenMap.set(parentId, []);
+        }
+        if (!childrenMap.get(parentId)!.includes(childId)) {
+          childrenMap.get(parentId)!.push(childId);
         }
       }
     });
 
     const grouped: Record<string, DeviceInfo[]> = {};
+    const processedDevices = new Set<string>();
 
-    // Hàm kiểm tra xem một thiết bị có phải là thiết bị gốc không
-    const isRootDevice = (deviceId: string) => {
-      return !parentMap.has(deviceId) && childrenMap.has(deviceId);
-    };
-
-    // Hàm kiểm tra xem một thiết bị có phải là thiết bị độc lập không
-    const isStandaloneDevice = (deviceId: string) => {
-      return !parentMap.has(deviceId) && !childrenMap.has(deviceId);
-    };
-
-    // Xử lý các thiết bị trong danh sách đã lọc
+    // Xử lý grouping - tối ưu bằng cách group theo profile trước
     filteredDevices.forEach(device => {
       const deviceId = device.id.id;
-      
-      // Bỏ qua nếu thiết bị đã được xử lý
-      if (processedDevices.has(deviceId)) {
-        return;
-      }
+
+      if (processedDevices.has(deviceId)) return;
 
       const profileName = profileIdToNameMap.get(device.deviceProfileId.id) || "Unknown";
       const groupInfo = getProfileDisplayInfo(profileName);
       const groupName = groupInfo.displayName;
 
-      // Nếu là thiết bị gốc hoặc thiết bị độc lập
-      if (isRootDevice(deviceId) || isStandaloneDevice(deviceId)) {
+      // Kiểm tra loại thiết bị
+      const deviceIsRoot = isRootDevice(deviceId, parentMap, childrenMap);
+      const deviceIsStandalone = isStandaloneDevice(deviceId, parentMap, childrenMap);
+
+      if (deviceIsRoot || deviceIsStandalone) {
         if (!grouped[groupName]) grouped[groupName] = [];
         grouped[groupName].push(device);
         processedDevices.add(deviceId);
 
-        // Đánh dấu tất cả các thiết bị con là đã xử lý
+        // Đánh dấu children đã xử lý - tối ưu bằng cách chỉ lặp một lần
         const markChildrenAsProcessed = (parentId: string) => {
-          const children = childrenMap.get(parentId) || [];
-          children.forEach(childId => {
-            processedDevices.add(childId);
-            if (childrenMap.has(childId)) {
-              markChildrenAsProcessed(childId);
-            }
-          });
+          const children = childrenMap.get(parentId);
+          if (children) {
+            children.forEach(childId => {
+              processedDevices.add(childId);
+            });
+          }
         };
         markChildrenAsProcessed(deviceId);
       }
     });
 
     return { groupedDevices: grouped, childrenMap, deviceMap, parentMap };
-  }, [filteredDevices, allRelations, allDevices, profileIdToNameMap]);
+  }, [filteredDevices, allRelations, allDevices, profileIdToNameMap, isRootDevice, isStandaloneDevice]);
 
-  const toggleExpanded = (id: string) => {
+  const toggleExpanded = useCallback((id: string) => {
     setExpandedItems(prev => ({ ...prev, [id]: !prev[id] }));
-  };
+  }, []);
 
-  const handleDeviceClick = (device: DeviceInfo) => {
+  const handleDeviceClick = useCallback((device: DeviceInfo) => {
     setSelectedDevice(device.id.id);
-  };
+  }, [setSelectedDevice]);
 
-  const getDeviceChildren = (deviceId: string): DeviceInfo[] => {
+  const getDeviceChildren = useCallback((deviceId: string): DeviceInfo[] => {
     const childIds = childrenMap.get(deviceId) || [];
     return childIds.map(id => deviceMap.get(id)).filter(Boolean) as DeviceInfo[];
-  };
-+``
-  const toggleGroupExpanded = (groupName: string) => {
+  }, [childrenMap, deviceMap]);
+
+  const getParentDevice = useCallback((deviceId: string): DeviceInfo | null => {
+    const parentId = parentMap.get(deviceId);
+    return parentId ? deviceMap.get(parentId) || null : null;
+  }, [parentMap, deviceMap]);
+
+  const toggleGroupExpanded = useCallback((groupName: string) => {
     setExpandedGroups(prev => ({ ...prev, [groupName]: !prev[groupName] }));
-  };
+  }, []);
   
-  const renderDeviceItem = (device: DeviceInfo, level = 0) => {
+  const renderDeviceItem = useCallback((device: DeviceInfo, level = 0) => {
     const hasChildren = (childrenMap.get(device.id.id) || []).length > 0;
     const isExpanded = expandedItems[device.id.id];
     const profileName = profileIdToNameMap.get(device.deviceProfileId.id);
-    
-    // Tìm thiết bị cha (nếu có)
-    let parentId = null;
-    let parentDevice = null;
-    let parentProfileName = null;
-    
+
+    // Tìm thiết bị cha (nếu có) - tối ưu bằng cách sử dụng parentMap
+    const parentDevice = getParentDevice(device.id.id);
+    const parentProfileName = parentDevice ? profileIdToNameMap.get(parentDevice.deviceProfileId.id) : null;
+
     // Kiểm tra xem thiết bị có phải là con của thiết bị khác không
-    for (const [pid, children] of childrenMap.entries()) {
-      if (children.includes(device.id.id)) {
-        parentId = pid;
-        parentDevice = deviceMap.get(parentId);
-        if (parentDevice) {
-          parentProfileName = profileIdToNameMap.get(parentDevice.deviceProfileId.id);
-        }
-        break;
-      }
-    }
-    
-    // Kiểm tra xem thiết bị có phải là con của thiết bị khác không
-    const isChildDevice = parentId !== null;
+    const isChildDevice = parentDevice !== null;
     
     // Kiểm tra các mối quan hệ đặc biệt
     const isCameraChildOfSensorbase = profileName === "VT-WXCM-000" && parentProfileName === "SU-G7L0-00";
-    const isSensorbaseChildOfGateway = profileName === "SU-G7L0-00" && parentProfileName === "GW-L0W0-00";
-    
+
     // Thiết bị độc lập là thiết bị không có con và không phải là con của thiết bị khác
     const isStandaloneDevice = !hasChildren && !isChildDevice;
 
@@ -329,7 +334,7 @@ export const DeviceListSection = (): JSX.Element => {
         )}
       </div>
     );
-  };
+  }, [childrenMap, expandedItems, profileIdToNameMap, getParentDevice, getDeviceChildren, handleDeviceClick, toggleExpanded]);
   
   const getDeviceCountForProfile = (profileId: string): number => {
     if (profileId === 'all') return allDevices.length;
@@ -337,91 +342,86 @@ export const DeviceListSection = (): JSX.Element => {
   };
 
   return (
-    <aside className="flex flex-col w-[280px] h-screen border-r border-[#ebebeb] bg-white">
-      <header className="flex items-center gap-4 px-4 py-5 h-[52px] border-b border-[#ebebeb]">
-        <h1 className="flex-1 [font-family:'SF_Pro_Display-Bold',Helvetica] font-bold text-neutral-900 text-base leading-7">
-          Devices
-        </h1>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-auto w-9 h-9 p-1.5 bg-[#e971321a] rounded-lg hover:bg-[#e971322a]"
-        >
-          <img
-            className="w-5 h-5"
-            alt="Collapse"
-            src="/arrows/arrows---arrow-left-double-line.svg"
-          />
-        </Button>
+    <aside className={`flex flex-col h-screen border-r border-[#ebebeb] bg-white transition-all duration-300 ${
+      isSidebarCollapsed ? 'w-[80px]' : 'w-[280px]'
+    }`}>
+      <header className="flex items-center justify-center px-4 py-5 h-[52px] border-b border-[#ebebeb]">
+        {isSidebarCollapsed ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-auto w-9 h-9 p-1.5 bg-[#e971321a] rounded-lg hover:bg-[#e971322a]"
+            onClick={toggleSidebarCollapsed}
+            title="Expand sidebar"
+          >
+            <div className="w-5 h-5 flex items-center justify-center text-gray font-bold">→</div>
+          </Button>
+        ) : (
+          <>
+            <h1 className="flex-1 [font-family:'SF_Pro_Display-Bold',Helvetica] font-bold text-neutral-900 text-base leading-7">
+              Devices
+            </h1>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-auto w-9 h-9 p-1.5 bg-[#e971321a] rounded-lg hover:bg-[#e971322a]"
+              onClick={toggleSidebarCollapsed}
+              title="Collapse sidebar"
+            >
+              <img
+                className="w-5 h-5"
+                alt="Collapse"
+                src="/arrows/arrows---arrow-left-double-line.svg"
+              />
+            </Button>
+          </>
+        )}
       </header>
 
-      <main className="flex flex-col flex-1 px-4 py-5 gap-2 overflow-y-auto overflow-x-auto min-h-0 min-w-0">
-        <div className="flex flex-col gap-1">
-          <div className="relative">
-            <SearchIcon className="absolute left-2 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral-400" />
-            <Input
-              placeholder="Search devices..."
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              className="pl-8 pr-4 py-1.5 border-[#ebebeb] [font-family:'SF_Pro_Text-Regular',Helvetica] font-normal text-neutral-400 text-sm tracking-[-0.08px]"
-            />
-          </div>
-        </div>
+      <main className={`flex flex-col flex-1 overflow-y-auto overflow-x-auto min-h-0 min-w-0 transition-all duration-300 ${
+        isSidebarCollapsed ? 'px-2 py-3' : 'px-4 py-5 gap-2'
+      }`}>
+        {!isSidebarCollapsed && (
+          <>
+            <div className="flex flex-col gap-1">
+              <div className="relative">
+                <SearchIcon className="absolute left-2 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral-400" />
+                <Input
+                  placeholder="Search devices..."
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  className="pl-8 pr-4 py-1.5 border-[#ebebeb] [font-family:'SF_Pro_Text-Regular',Helvetica] font-normal text-neutral-400 text-sm tracking-[-0.08px]"
+                />
+              </div>
+            </div>
 
-        <div className="flex flex-col gap-1">
-          <Select
-            value={selectedProfile}
-            onValueChange={setSelectedProfile}
-            disabled={loading}
-            onOpenChange={setIsDropdownOpen}
-          >
-            <SelectTrigger className={`flex items-center justify-between gap-2 pl-3 pr-2.5 py-2.5 shadow-regular-shadow-x-small rounded-[10px] transition-colors ${
-              isDropdownOpen ? 'border-[#E97132] bg-[#E97132]/5' : 'border-[#ebebeb] bg-white'
-            }`} placeholder="All">
-              <div className="flex items-center gap-2 flex-1">
-                <FilterIcon className={`w-5 h-5 transition-colors ${isDropdownOpen ? 'text-[#E97132]' : 'text-gray-500'}`} />
-                <div className="flex flex-col items-start flex-1">
-                  <span className={`font-paragraph-small transition-colors ${isDropdownOpen ? 'text-[#E97132]' : 'text-[#5c5c5c]'}`}>
-                    {loading ? "Loading..." : selectedProfile === "all" ? "All" : getProfileDisplayInfo(profileIdToNameMap.get(selectedProfile) || "").displayName}
-                  </span>
-                </div>
-              </div>
-              <div className={`flex items-center justify-center w-8 h-6 rounded-full text-xs font-semibold transition-colors ${
-                isDropdownOpen ? 'bg-[#E97132] text-white' : 'bg-gray-200 text-gray-700'
-              }`}>
-                {loading ? "..." : getDeviceCountForProfile(selectedProfile)}
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem
-                value="all"
-                className="font-paragraph-small text-[#5c5c5c] relative flex flex-col p-0 items-start"
-                style={{ paddingLeft: '12px', paddingRight: '12px', paddingTop: '8px', paddingBottom: '8px' }}
+            <div className="flex flex-col gap-1">
+              <Select
+                value={selectedProfile}
+                onValueChange={setSelectedProfile}
+                disabled={loading}
+                onOpenChange={setIsDropdownOpen}
               >
-                <style dangerouslySetInnerHTML={{
-                  __html: `
-                    [data-radix-select-item][data-state="checked"] [data-radix-select-item-indicator] {
-                      display: none !important;
-                    }
-                  `
-                }} />
-                <div className="flex items-center w-full">
-                  <span>All</span>
-                  <span className="absolute right-7 top-1 px-2 py-1 bg-gray-200 text-gray-700 rounded-full text-xs font-semibold">
-                    {getDeviceCountForProfile('all')}
-                  </span>
-                </div>
-                <span className="text-xs text-gray-400 mt-1">Show all device types</span>
-              </SelectItem>
-              {deviceProfiles
-                .filter((profile) => profile.name.toLowerCase() !== 'default')
-                .map((profile) => {
-                const info = getProfileDisplayInfo(profile.name);
-                const count = getDeviceCountForProfile(profile.id.id);
-                return (
+                <SelectTrigger className={`flex items-center justify-between gap-2 pl-3 pr-2.5 py-2.5 shadow-regular-shadow-x-small rounded-[10px] transition-colors ${
+                  isDropdownOpen ? 'border-[#E97132] bg-[#E97132]/5' : 'border-[#ebebeb] bg-white'
+                }`} placeholder="All">
+                  <div className="flex items-center gap-2 flex-1">
+                    <FilterIcon className={`w-5 h-5 transition-colors ${isDropdownOpen ? 'text-[#E97132]' : 'text-gray-500'}`} />
+                    <div className="flex flex-col items-start flex-1">
+                      <span className={`font-paragraph-small transition-colors ${isDropdownOpen ? 'text-[#E97132]' : 'text-[#5c5c5c]'}`}>
+                        {loading ? "Loading..." : selectedProfile === "all" ? "All" : getProfileDisplayInfo(profileIdToNameMap.get(selectedProfile) || "").displayName}
+                      </span>
+                    </div>
+                  </div>
+                  <div className={`flex items-center justify-center w-8 h-6 rounded-full text-xs font-semibold transition-colors ${
+                    isDropdownOpen ? 'bg-[#E97132] text-white' : 'bg-gray-200 text-gray-700'
+                  }`}>
+                    {loading ? "..." : getDeviceCountForProfile(selectedProfile)}
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
                   <SelectItem
-                    key={profile.id.id}
-                    value={profile.id.id}
+                    value="all"
                     className="font-paragraph-small text-[#5c5c5c] relative flex flex-col p-0 items-start"
                     style={{ paddingLeft: '12px', paddingRight: '12px', paddingTop: '8px', paddingBottom: '8px' }}
                   >
@@ -433,23 +433,124 @@ export const DeviceListSection = (): JSX.Element => {
                       `
                     }} />
                     <div className="flex items-center w-full">
-                      <span>{info.displayName}</span>
+                      <span>All</span>
                       <span className="absolute right-7 top-1 px-2 py-1 bg-gray-200 text-gray-700 rounded-full text-xs font-semibold">
-                        {count}
+                        {getDeviceCountForProfile('all')}
                       </span>
                     </div>
-                    <span className="text-xs text-gray-400 mt-1">{info.description}</span>
+                    <span className="text-xs text-gray-400 mt-1">Show all device types</span>
                   </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-        </div>
+                  {deviceProfiles
+                    .filter((profile) => profile.name.toLowerCase() !== 'default')
+                    .map((profile) => {
+                    const info = getProfileDisplayInfo(profile.name);
+                    const count = getDeviceCountForProfile(profile.id.id);
+                    return (
+                      <SelectItem
+                        key={profile.id.id}
+                        value={profile.id.id}
+                        className="font-paragraph-small text-[#5c5c5c] relative flex flex-col p-0 items-start"
+                        style={{ paddingLeft: '12px', paddingRight: '12px', paddingTop: '8px', paddingBottom: '8px' }}
+                      >
+                        <style dangerouslySetInnerHTML={{
+                          __html: `
+                            [data-radix-select-item][data-state="checked"] [data-radix-select-item-indicator] {
+                              display: none !important;
+                            }
+                          `
+                        }} />
+                        <div className="flex items-center w-full">
+                          <span>{info.displayName}</span>
+                          <span className="absolute right-7 top-1 px-2 py-1 bg-gray-200 text-gray-700 rounded-full text-xs font-semibold">
+                            {count}
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-400 mt-1">{info.description}</span>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+          </>
+        )}
 
-        {loading ? (
-          <div className="flex flex-col items-center justify-center flex-1 py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#E97132]"></div>
-            <p className="mt-2 text-sm text-gray-500">Loading devices...</p>
+        {isSidebarCollapsed ? (
+          // Collapsed view - show device group icons
+          <div className="flex flex-col gap-2 flex-1">
+            {(() => {
+              const desiredOrder = ["Camera", "Gateway", "Sensorbase", "File Uploader Device"];
+
+              const sortedEntries = Object.entries(groupedDevices).sort(([a], [b]) => {
+                const indexA = desiredOrder.indexOf(a);
+                const indexB = desiredOrder.indexOf(b);
+
+                const finalIndexA = indexA === -1 ? desiredOrder.length : indexA;
+                const finalIndexB = indexB === -1 ? desiredOrder.length : indexB;
+
+                return finalIndexA - finalIndexB;
+              });
+
+              return sortedEntries.map(([groupName, deviceList]) => {
+                const getGroupIcon = (name: string) => {
+                  switch (name) {
+                    case "Camera":
+                      return "/icons/camera-connected.svg";
+                    case "Gateway":
+                      return "/sensor-base.svg";
+                    case "Sensorbase":
+                      return "/sensor.svg";
+                    case "File Uploader Device":
+                      return <Upload className="w-8 h-8" />;
+                    default:
+                      return "/sensor.svg";
+                  }
+                };
+
+                const deviceCount = deviceList.length;
+
+                return (
+                  <div
+                    key={groupName}
+                    className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-gray-50 group"
+                    title={groupName}
+                  >
+                    <div className="relative">
+                      {typeof getGroupIcon(groupName) === 'string' ? (
+                        <img
+                          className="w-8 h-8"
+                          alt={groupName}
+                          src={getGroupIcon(groupName) as string}
+                        />
+                      ) : (
+                        <div className="w-8 h-8 flex items-center justify-center">
+                          {getGroupIcon(groupName)}
+                        </div>
+                      )}
+                      {deviceCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-[#E97132] text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                          {deviceCount > 9 ? '9+' : deviceCount}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+        ) : loading ? (
+          <div className="flex flex-col gap-4 flex-1 py-4">
+            {/* Loading skeleton */}
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg animate-pulse">
+                <div className="w-5 h-5 bg-gray-200 rounded"></div>
+                <div className="w-8 h-8 bg-gray-200 rounded"></div>
+                <div className="flex-1">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center flex-1 py-8">
@@ -466,12 +567,28 @@ export const DeviceListSection = (): JSX.Element => {
           </div>
         ) : (
           <div className="flex flex-col gap-0">
-            {Object.entries(groupedDevices).map(([groupName, deviceList]) => (
-              <Collapsible
-                key={groupName}
-                open={expandedGroups[groupName] ?? true}
-                onOpenChange={() => toggleGroupExpanded(groupName)}
-              >
+            {(() => {
+              // Định nghĩa thứ tự hiển thị mong muốn
+              const desiredOrder = ["Camera", "Gateway", "Sensorbase", "File Uploader Device"];
+
+              // Sắp xếp groupedDevices theo thứ tự mong muốn
+              const sortedEntries = Object.entries(groupedDevices).sort(([a], [b]) => {
+                const indexA = desiredOrder.indexOf(a);
+                const indexB = desiredOrder.indexOf(b);
+
+                // Nếu không tìm thấy trong desiredOrder, đặt ở cuối
+                const finalIndexA = indexA === -1 ? desiredOrder.length : indexA;
+                const finalIndexB = indexB === -1 ? desiredOrder.length : indexB;
+
+                return finalIndexA - finalIndexB;
+              });
+
+              return sortedEntries.map(([groupName, deviceList]) => (
+                <Collapsible
+                  key={groupName}
+                  open={expandedGroups[groupName] ?? true}
+                  onOpenChange={() => toggleGroupExpanded(groupName)}
+                >
                 <CollapsibleTrigger className="flex items-center gap-1 pt-2 pb-3 px-0 w-full hover:bg-gray-50 rounded">
                   <ChevronDownIcon
                     className={`w-[18px] h-[18px] transition-transform ${
@@ -488,7 +605,8 @@ export const DeviceListSection = (): JSX.Element => {
                   </div>
                 </CollapsibleContent>
               </Collapsible>
-            ))}
+            ));
+            })()}
             {Object.keys(groupedDevices).length === 0 && (
               <div className="text-center text-gray-500 text-sm py-4">
                 No devices found.

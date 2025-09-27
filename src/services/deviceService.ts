@@ -1,26 +1,6 @@
 import { getEndpoint } from './endpointService';
 import { getCookie } from '../utils/cookieUtils';
 import { DeviceInfoList } from '../types';
-import { websocketService } from './websocketService';
-import type { WebSocketEventCallback } from './websocketService';
-
-/**
- * WebSocket Functions for Real-time Gateway Status
- *
- * These functions provide real-time updates for gateway measurement and upload interval status
- * using WebSocket instead of REST API polling.
- *
- * Usage in components:
- * ```typescript
- * const { data, loading, isConnected } = useGatewayMeasurementStatus(deviceIds);
- *
- * // Or manually:
- * const subscriptionIds = subscribeToGatewayMeasurementAndUploadIntervalStatus(
- *   deviceIds,
- *   (data) => console.log('Status updated:', data)
- * );
- * ```
- */
 
 // Function to fetch device info list
 export const fetchDeviceInfos = async (params: {
@@ -112,8 +92,8 @@ export const fetchGatewayDevices = async (params: {
   queryParams.append('includeCustomers', 'true'); // Always include customers
   queryParams.append('deviceProfileId', '970f3fe0-b20e-11ef-8f8f-09ec942e43b6'); // Fixed gateway deviceProfileId
 
-  // Optional parameters - leave empty for now
-  // textSearch will be added when search functionality is implemented
+  // Optional parameters
+  if (params.textSearch) queryParams.append('textSearch', params.textSearch);
 
   const finalQuery = queryParams.toString();
   const url = getEndpoint(`/api/deviceInfos/all?${finalQuery}`);
@@ -249,57 +229,4 @@ export const fetchDeviceAttributes = async (
   });
 
   return attributesMap;
-};
-
-// Function to subscribe to gateway measurement and upload interval status via WebSocket
-export const subscribeToGatewayMeasurementAndUploadIntervalStatus = (
-  deviceIds: string[],
-  callback: (data: Record<string, Record<string, any>>) => void
-): string[] => {
-  const subscriptionIds: string[] = [];
-
-  // Subscribe to attributes for each device
-  deviceIds.forEach(deviceId => {
-    const subscriptionId = websocketService.subscribeToAttributes(
-      'DEVICE',
-      deviceId,
-      (data: Record<string, any>) => {
-        // Filter only measurement_started and upload_interval_time attributes
-        const filteredData: Record<string, Record<string, any>> = {};
-        filteredData[deviceId] = {};
-
-        if (data.measurement_started !== undefined) {
-          filteredData[deviceId].measurement_started = [{ value: data.measurement_started }];
-        }
-        if (data.upload_interval_time !== undefined) {
-          filteredData[deviceId].upload_interval_time = [{ value: data.upload_interval_time }];
-        }
-
-        // Call the callback with updated data for all devices
-        const updatedData: Record<string, Record<string, any>> = {};
-        deviceIds.forEach(id => {
-          if (filteredData[id]) {
-            updatedData[id] = filteredData[id];
-          } else {
-            updatedData[id] = {};
-          }
-        });
-
-        callback(updatedData);
-      }
-    );
-
-    subscriptionIds.push(subscriptionId);
-  });
-
-  return subscriptionIds;
-};
-
-// Function to unsubscribe from gateway measurement and upload interval status
-export const unsubscribeFromGatewayMeasurementAndUploadIntervalStatus = (
-  subscriptionIds: string[]
-): void => {
-  subscriptionIds.forEach(subscriptionId => {
-    websocketService.unsubscribe(subscriptionId);
-  });
 };
