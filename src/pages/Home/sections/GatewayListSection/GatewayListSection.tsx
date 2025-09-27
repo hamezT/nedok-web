@@ -6,9 +6,12 @@ import {
   ChevronsRightIcon,
   SearchIcon,
   SettingsIcon,
+  WifiIcon,
+  WifiOffIcon,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigation } from "../../../../hooks/useNavigation";
+import { useWebSocket, useGatewayMeasurementStatus } from "../../../../hooks/useWebSocket";
 import { Badge } from "../../../../components/ui/badge";
 import { Button } from "../../../../components/ui/button";
 import { Input } from "../../../../components/ui/input";
@@ -27,54 +30,51 @@ import {
   TableHeader,
   TableRow,
 } from "../../../../components/ui/table";
-import { fetchGatewayDevices } from "../../../../services/deviceService";
-// import { fetchDeviceAttributes } from "../../../../services/deviceService"; // TODO: Use when API is working
+import { fetchGatewayDevices, fetchGatewayMeasurementAndUploadIntervalStatus, subscribeToGatewayMeasurementAndUploadIntervalStatus, unsubscribeFromGatewayMeasurementAndUploadIntervalStatus } from "../../../../services/deviceService";
 import { DeviceInfo } from "../../../../types";
 
 // Transform DeviceInfo to Gateway format
-const transformGatewayData = (device: DeviceInfo, attributes?: Record<string, any>) => {
-  const isActive = device.active;
+const transformGatewayData = (device: DeviceInfo, deviceAttributes?: Record<string, any>, isWebSocketConnected?: boolean) => {
+  // Use WebSocket connection status if available, otherwise fall back to device.active
+  const isActive = isWebSocketConnected !== undefined ? isWebSocketConnected : device.active;
 
-  // Debug log to see attributes structure
-  console.log(`Device ${device.name} attributes:`, attributes);
+  // Get measurement status from API attributes
+  const measurementStartedAttr = deviceAttributes?.measurement_started?.[0];
+  const isMeasurementStarted = measurementStartedAttr?.value ?? isActive;
 
-  // Get upload interval from attributes and convert from seconds to minutes
-  let uploadInterval = "3 mins"; // default fallback
+  // Get upload interval from API attributes and convert from seconds to minutes
+  let uploadInterval = "-"; // default fallback
 
-  // Try different possible data structures
-  let uploadIntervalValue = null;
+  // Debug: Log device attributes to see structure
+  console.log(`Device ${device.name} full attributes:`, deviceAttributes);
+
+  // Try different ways to access upload_interval_time
+  let uploadIntervalAttr = null;
 
   // Case 1: Array of attribute objects (from API response)
-  if (Array.isArray(attributes?.upload_interval_time)) {
-    const attr = attributes.upload_interval_time.find((item: any) => item.key === 'upload_interval_time');
-    if (attr?.value) {
-      uploadIntervalValue = attr.value;
-    }
+  if (Array.isArray(deviceAttributes)) {
+    uploadIntervalAttr = deviceAttributes.find(attr => attr.key === 'upload_interval_time');
   }
-  // Case 2: Direct value access
-  else if (attributes?.upload_interval_time?.value) {
-    uploadIntervalValue = attributes.upload_interval_time.value;
-  }
-  // Case 3: Nested object access
-  else if (attributes?.upload_interval_time?.[0]?.value) {
-    uploadIntervalValue = attributes.upload_interval_time[0].value;
+  // Case 2: Object with nested array
+  else if (deviceAttributes?.upload_interval_time && Array.isArray(deviceAttributes.upload_interval_time)) {
+    uploadIntervalAttr = deviceAttributes.upload_interval_time[0];
   }
 
-  if (uploadIntervalValue) {
-    const seconds = uploadIntervalValue;
+  if (uploadIntervalAttr?.value) {
+    const seconds = uploadIntervalAttr.value;
     const minutes = Math.floor(seconds / 60);
     uploadInterval = `${minutes} mins`;
     console.log(`Device ${device.name}: ${seconds}s -> ${minutes} mins`);
   } else {
-    console.log(`Device ${device.name}: Using default upload interval: ${uploadInterval}. Attributes:`, attributes);
+    console.log(`Device ${device.name}: No upload interval found. Using default: ${uploadInterval}`);
   }
 
   return {
     name: device.name,
     status: isActive ? "Online" : "Offline",
     statusColor: isActive ? "#1fc06a" : "#7b7b7b",
-    measurement: isActive ? "Started" : "Stopped",
-    measurementType: isActive ? "started" : "stopped",
+    measurement: isMeasurementStarted ? "Started" : "Stopped",
+    measurementType: isMeasurementStarted ? "started" : "stopped",
     uploadInterval: uploadInterval,
   };
 };
@@ -139,7 +139,7 @@ const GatewayCard = ({
 export const GatewayListSection = (): JSX.Element => {
   const { navigateToSensorData } = useNavigation();
   const [gatewayDevices, setGatewayDevices] = useState<DeviceInfo[]>([]);
-  const [deviceAttributes, setDeviceAttributes] = useState<Record<string, Record<string, any>>>({});
+  const [measurementStatus, setMeasurementStatus] = useState<Record<string, Record<string, any>>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
@@ -149,6 +149,19 @@ export const GatewayListSection = (): JSX.Element => {
   const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
+
+  // WebSocket integration
+  const { isConnected, error: wsError } = useWebSocket({
+    onConnectionChange: (connected) => {
+      console.log('WebSocket connection status:', connected);
+    },
+    onError: (err) => {
+      console.error('WebSocket error:', err);
+    }
+  });
+
+  // Update error state to include WebSocket errors
+  const displayError = error || wsError?.message;
 
 
   useEffect(() => {
@@ -198,49 +211,27 @@ export const GatewayListSection = (): JSX.Element => {
         console.log('Sorted devices:', sortedDevices.map(d => `${d.name} (${d.active ? 'Online' : 'Offline'})`));
         setGatewayDevices(sortedDevices);
 
-        // Fetch attributes for all devices
+        // Fetch measurement status for all devices
         if (sortedDevices.length > 0) {
           const deviceIds = sortedDevices.map(device => device.id.id);
-          console.log('Fetching attributes for devices:', deviceIds);
+          console.log('Fetching measurement status for devices:', deviceIds);
 
-          // Mock attributes for testing (remove this when API is working)
-          const mockAttributes: Record<string, Record<string, any>> = {};
-          deviceIds.forEach(deviceId => {
-            // Find the device to get its active status for mock attributes
-            const device = devices.find(d => d.id.id === deviceId);
-            const uploadInterval = device?.active ? 300 : 600; // 5 mins for online, 10 mins for offline
-            mockAttributes[deviceId] = {
-              upload_interval_time: [
-                {
-                  key: "upload_interval_time",
-                  value: uploadInterval,
-                  lastUpdateTs: Date.now()
-                }
-              ]
-            };
-          });
-          console.log('Using mock attributes:', mockAttributes);
-          setDeviceAttributes(mockAttributes);
-
-          // Uncomment below when API is working
-          /*
           try {
-            const attributesMap = await fetchDeviceAttributes(deviceIds, ["upload_interval_time"]);
-            console.log('Received attributes:', attributesMap);
-            setDeviceAttributes(attributesMap);
+            const measurementStatusMap = await fetchGatewayMeasurementAndUploadIntervalStatus(deviceIds, ["measurement_started", "upload_interval_time"]);
+            console.log('Received measurement status:', measurementStatusMap);
+            setMeasurementStatus(measurementStatusMap);
           } catch (attrError) {
-            console.error('Failed to fetch device attributes:', attrError);
-            setDeviceAttributes({});
+            console.error('Failed to fetch measurement status:', attrError);
+            setMeasurementStatus({});
           }
-          */
         } else {
-          setDeviceAttributes({});
+          setMeasurementStatus({});
         }
       } catch (err) {
         console.error('Failed to fetch gateway devices:', err);
         setError('Failed to load gateway devices. Please try again later.');
         setGatewayDevices([]);
-        setDeviceAttributes({});
+        setMeasurementStatus({});
       } finally {
         setLoading(false);
       }
@@ -248,6 +239,19 @@ export const GatewayListSection = (): JSX.Element => {
 
     loadGatewayDevices();
   }, [searchText, currentPage, pageSize]);
+
+  // WebSocket subscription management - using the new hook
+  const { data: wsMeasurementData, isConnected: wsConnected } = useGatewayMeasurementStatus(
+    gatewayDevices.map(device => device.id.id),
+    true // Always enabled when we have devices
+  );
+
+  // Merge REST API data with WebSocket data
+  useEffect(() => {
+    if (wsMeasurementData && Object.keys(wsMeasurementData).length > 0) {
+      setMeasurementStatus(prev => ({ ...prev, ...wsMeasurementData }));
+    }
+  }, [wsMeasurementData]);
 
   const handleRowClick = (gatewayName: string) => {
     console.log("Row clicked with gateway name:", gatewayName); // Debug log
@@ -264,12 +268,14 @@ export const GatewayListSection = (): JSX.Element => {
       <div className="flex items-start justify-around gap-2.5 relative flex-1 self-stretch grow rounded-2xl overflow-hidden">
         <div className="flex flex-col items-start gap-4 p-2 lg:p-4 relative flex-1 self-stretch grow bg-white">
           <header className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 relative self-stretch w-full flex-[0_0_auto] bg-transparent">
-            <h1 className="[font-family:'Inter',Helvetica] font-semibold text-neutral-900 text-xl lg:text-2xl tracking-[0] leading-8">
-              Gateway lists
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="[font-family:'Inter',Helvetica] font-semibold text-neutral-900 text-xl lg:text-2xl tracking-[0] leading-8">
+                Gateway lists
+              </h1>
+            </div>
 
-            <div className="flex w-full lg:w-80 gap-3 items-center relative">
-              <div className="flex-col gap-1 flex items-start relative flex-1 grow">
+            <div className="flex w-full lg:w-80 items-center relative">
+              <div className="flex items-center w-full">
                 <div className="relative w-full">
                   <SearchIcon className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral-400" />
                   <Input
@@ -290,11 +296,11 @@ export const GatewayListSection = (): JSX.Element => {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#E97132]"></div>
                 <p className="mt-2 text-sm text-gray-500">Loading gateways...</p>
               </div>
-            ) : error ? (
+            ) : displayError ? (
               <div className="flex flex-col items-center justify-center flex-1 py-8">
                 <div className="text-red-500 text-sm text-center">
                   <p className="mb-2">⚠️ Error loading gateways</p>
-                  <p>{error}</p>
+                  <p>{displayError}</p>
                   <button
                     onClick={() => window.location.reload()}
                     className="mt-2 px-3 py-1 bg-[#E97132] text-white rounded text-xs hover:bg-[#E97132]/80"
@@ -336,8 +342,8 @@ export const GatewayListSection = (): JSX.Element => {
                     </TableRow>
                   ) : (
                     gatewayDevices.map((device) => {
-                      const deviceAttributesForDevice = deviceAttributes[device.id.id] || {};
-                      const gateway = transformGatewayData(device, deviceAttributesForDevice);
+                      const deviceMeasurementStatus = measurementStatus[device.id.id] || {};
+                      const gateway = transformGatewayData(device, deviceMeasurementStatus, wsConnected);
                       return (
                         <TableRow
                           key={device.id.id}
@@ -400,11 +406,11 @@ export const GatewayListSection = (): JSX.Element => {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#E97132]"></div>
                 <p className="mt-2 text-sm text-gray-500">Loading gateways...</p>
               </div>
-            ) : error ? (
+            ) : displayError ? (
               <div className="flex flex-col items-center justify-center py-8">
                 <div className="text-red-500 text-sm text-center">
                   <p className="mb-2">⚠️ Error loading gateways</p>
-                  <p>{error}</p>
+                  <p>{displayError}</p>
                   <button
                     onClick={() => window.location.reload()}
                     className="mt-2 px-3 py-1 bg-[#E97132] text-white rounded text-xs hover:bg-[#E97132]/80"
@@ -421,8 +427,8 @@ export const GatewayListSection = (): JSX.Element => {
               </div>
             ) : (
               gatewayDevices.map((device) => {
-                const deviceAttributesForDevice = deviceAttributes[device.id.id] || {};
-                const gateway = transformGatewayData(device, deviceAttributesForDevice);
+                const deviceMeasurementStatus = measurementStatus[device.id.id] || {};
+                const gateway = transformGatewayData(device, deviceMeasurementStatus, wsConnected);
                 return (
                   <GatewayCard key={device.id.id} gateway={gateway} onClick={handleRowClick} />
                 );
