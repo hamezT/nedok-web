@@ -72,7 +72,6 @@ export const DeviceListSection = (): JSX.Element => {
         setDeviceProfiles(profiles);
         await loadAllDevices();
       } catch (err) {
-        console.error('Failed to fetch initial data:', err);
         setError('Failed to load device data. Please try again later.');
         setLoading(false);
       }
@@ -119,7 +118,6 @@ export const DeviceListSection = (): JSX.Element => {
       const result = await fetchDeviceInfos(params);
       setAllDevices(result.data);
     } catch (err) {
-      console.error('Failed to fetch all devices:', err);
       setError('Failed to load devices.');
       setAllDevices([]);
     }
@@ -133,7 +131,6 @@ export const DeviceListSection = (): JSX.Element => {
         setAllRelations(relations);
       }
     } catch (err) {
-      console.error('Failed to fetch relations:', err);
       setError('Failed to load device relations.');
       setAllRelations([]);
     } finally {
@@ -218,7 +215,6 @@ export const DeviceListSection = (): JSX.Element => {
       }
     });
 
-    console.log('Quan hệ cha-con:', { parentMap, childrenMap });
     return { groupedDevices: grouped, childrenMap, deviceMap, parentMap };
   }, [filteredDevices, allRelations, allDevices, profileIdToNameMap]);
 
@@ -268,15 +264,6 @@ export const DeviceListSection = (): JSX.Element => {
     const isCameraChildOfSensorbase = profileName === "VT-WXCM-000" && parentProfileName === "SU-G7L0-00";
     const isSensorbaseChildOfGateway = profileName === "SU-G7L0-00" && parentProfileName === "GW-L0W0-00";
     
-    // Log các mối quan hệ
-    if (isCameraChildOfSensorbase) {
-      console.log(`Camera [${device.name}] là con của Sensorbase [${parentDevice?.name}]`);
-    }
-    
-    if (isSensorbaseChildOfGateway) {
-      console.log(`Sensorbase [${device.name}] là con của Gateway [${parentDevice?.name}]`);
-    }
-    
     // Thiết bị độc lập là thiết bị không có con và không phải là con của thiết bị khác
     const isStandaloneDevice = !hasChildren && !isChildDevice;
 
@@ -293,15 +280,12 @@ export const DeviceListSection = (): JSX.Element => {
     if (isStandaloneDevice) {
       // Thiết bị độc lập
       basePadding = 12;
-      console.log(`Thiết bị độc lập [${device.name}] (${profileName}) - padding: ${basePadding}px`);
     } else if (isCameraChildOfSensorbase) {
       // Camera là con của sensorbase - đảm bảo nó có padding cố định 60px
       basePadding = 60;
-      console.log(`Camera [${device.name}] là con của Sensorbase - áp dụng padding: ${basePadding}px`);
     } else {
       // Các thiết bị khác - tính padding dựa trên cấp độ
       basePadding = level * 20 + 12;
-      console.log(`Thiết bị [${device.name}] (${profileName}) ở cấp độ ${level} - padding: ${basePadding}px`);
     }
 
     return (

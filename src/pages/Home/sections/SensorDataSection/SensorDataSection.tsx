@@ -160,7 +160,6 @@ export const SensorDataSection = (): JSX.Element => {
   const { selectedDevice } = useDevice();
   const { navigateBack } = useNavigation();
 
-  console.log("SensorDataSection rendered with device:", selectedDevice); // Debug log
   return (
     <section className="flex items-start gap-2.5 p-5 flex-1 self-stretch grow">
       <Card className="flex-1 self-stretch grow rounded-2xl overflow-hidden">

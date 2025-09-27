@@ -8,8 +8,6 @@ import { DeviceProvider, useDevice } from "../../contexts/DeviceContext";
 const HomeContent = (): JSX.Element => {
   const { selectedDevice } = useDevice();
   
-  console.log("Current selectedDevice:", selectedDevice); // Debug log
-
   return (
     <MainLayout sidebar={<DeviceListSection />}>
       {selectedDevice ? <SensorDataSection /> : <GatewayListSection />}

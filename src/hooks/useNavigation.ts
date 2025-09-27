@@ -5,7 +5,6 @@ export const useNavigation = () => {
   const { setSelectedDevice } = useDevice();
 
   const navigateToSensorData = useCallback((gatewayId: string) => {
-    console.log("Navigating to sensor data with ID:", gatewayId); // Debug log
     setSelectedDevice(gatewayId);
   }, [setSelectedDevice]);
 
